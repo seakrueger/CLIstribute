@@ -5,7 +5,7 @@ from reader import read_input
 from async_server import start_server
 
 def init_database():
-    db_con = sqlite3.connect("commands.db")
+    db_con = sqlite3.connect("clistribute.db")
     cursor = db_con.cursor()
 
     cursor.execute("""CREATE TABLE IF NOT EXISTS commands (

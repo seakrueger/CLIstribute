@@ -1,3 +1,5 @@
+*.db
+
 # Symlink to shared directory
 */shared
 
