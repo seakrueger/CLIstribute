@@ -11,10 +11,19 @@ def init_database():
     cursor.execute("""CREATE TABLE IF NOT EXISTS commands (
                         job_id INTEGER NOT NULL PRIMARY KEY,
                         command TEXT NOT NULL,
+                        status TEXT NOT NULL,
                         capture_stdout INTEGER
                     )
     """)
+    cursor.execute("""CREATE TABLE IF NOT EXISTS servers (
+                        server_id INTEGER NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        current_job_id INTEGER 
+                    )
+    """)
 
+    db_con.commit()
     db_con.close()
 
 def main():
