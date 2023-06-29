@@ -1,6 +1,6 @@
 import sqlite3
 
-from command import Command
+from shared.command import Command
 
 class Database():
     def _connect(self):

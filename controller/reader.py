@@ -1,7 +1,7 @@
 import sqlite3
 import queue
 
-from command import Command
+from shared.command import Command
 from database import CommandDatabase
 
 commands = CommandDatabase()
