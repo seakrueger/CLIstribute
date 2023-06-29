@@ -1,11 +1,7 @@
-import sqlite3
-import queue
-
 from shared.command import Command
 from database import CommandDatabase
 
 commands = CommandDatabase()
-command_queue = queue.Queue()
 currently_running = []
 
 def read_input():
@@ -13,11 +9,7 @@ def read_input():
         input_command = input("Command: ")
         command = Command(input_command, "queued", True)
         commands.add_command(command)
-        commands.update_command_status(4, "starting")
         
-        next_job = commands.get_next_queued()
-        print(commands.get_command(next_job).executed_command)
-
         print("added command")
 
 def grab_next(server):
