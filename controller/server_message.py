@@ -2,6 +2,7 @@ import socket
 import json
 
 from shared.message import CallbackMessage, CommandMessage, ErrorMessage, ErrorType 
+from shared.command import Command
 
 class MessageHandler():
     def __init__(self) -> None:
@@ -12,8 +13,8 @@ class _Sender():
     def __init__(self) -> None:
         self.hostname = socket.gethostname()
 
-    def command(self, command):
-        message = CommandMessage(self.hostname, "Command to run", command, True)
+    def command(self, command: Command):
+        message = CommandMessage(self.hostname, "Command to run", command)
         return self._encode(message)
 
     def no_command(self):

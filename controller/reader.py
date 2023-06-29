@@ -31,5 +31,5 @@ def grab_next(server):
     currently_running.append((server, next_command.executed_command))
 
     print("grabbed command")
-    return next_command.executed_command
+    return next_command
 

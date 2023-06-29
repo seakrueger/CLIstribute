@@ -1,5 +1,7 @@
 from enum import Enum
 
+from shared.command import Command
+
 class ErrorType(str, Enum):
     JSON = 'json'
     COMMAND = 'command'
@@ -45,11 +47,12 @@ class ErrorMessage(Message):
         self.error['job_id'] = job_id
 
 class CommandMessage(Message):
-    def __init__(self, server_name: str, message: str, command: str, output: bool) -> None:
+    def __init__(self, server_name: str, message: str, command: Command) -> None:
         super().__init__(server_name, MessageType.COMMAND, message)
         self.command = {}
-        self.command['command'] = command
-        self.command['capture_output'] = output
+        self.command['command'] = command.executed_command
+        self.command['capture_output'] = command.capture_std_out
+        self.command['job_id'] = command.job_id
 
 class CallbackMessage(Message):
     def __init__(self, server_name: str, message: str, come_back: bool, interval_ms: int) -> None:

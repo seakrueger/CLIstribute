@@ -20,9 +20,9 @@ class JobServerProtocol(asyncio.Protocol):
                 case MessageType.JOB_STATUS:
                     response = process_status(message)
                 case MessageType.REQUEST_JOB:
-                    response = process_request(message)
-                    if response:
-                        response = message_handler.sender.command(response)
+                    next_command = process_request(message)
+                    if next_command:
+                        response = message_handler.sender.command(next_command)
                     else:
                         response = message_handler.sender.no_command()
                 case MessageType.ERROR:
