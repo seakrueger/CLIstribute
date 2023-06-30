@@ -1,8 +1,8 @@
 import asyncio
 
-from shared.message import MessageType 
+from shared.message_handler import MessageHandler
+from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage 
 from shared.command import CommandStatus
-from server_message import MessageHandler
 import reader
 
 class JobServerProtocol(asyncio.Protocol):
@@ -16,34 +16,32 @@ class JobServerProtocol(asyncio.Protocol):
             reader.workers.add_worker(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
             self.worker_id = reader.workers.get_worker_id_by_ip(ip)
 
+        self.message_handler = MessageHandler()
         self.transport = transport
 
     def data_received(self, data):
-        message_handler = MessageHandler()
         try:
-            message = message_handler.reciever.parse(data)
+            message = self.message_handler.reciever.parse(data)
             print(message['type'])
             
             match message['type']:
                 case MessageType.JOB_STATUS:
                     response = self.process_status(message)
                 case MessageType.REQUEST_JOB:
-                    next_command = self.process_request(message)
-                    if next_command:
-                        response = message_handler.sender.command(next_command)
-                    else:
-                        response = message_handler.sender.no_command()
+                    response = self.process_request(message)
                 case MessageType.ERROR:
                     response = self.process_error(message) 
                 case _:
                     raise NotImplemented
-                
             if response:
                 self.transport.write(response)
+
         except ValueError as e:
-            self.transport.write(message_handler.sender.failed_to_parse(e))
+            response = ErrorMessage("Failed to parse message JSON", ErrorType.JSON, e)
+            self.transport.write(self.message_handler.sender.process(response))
         except NotImplementedError as e:
-            self.transport.write(message_handler.sender.failed_to_find_message_type(e))
+            response = ErrorMessage(f"Failed to find message of type {message['type']}", ErrorType.COMMAND, e)
+            self.transport.write(self.message_handler.sender.process(response))
         finally:
             self.transport.close()
     
@@ -56,8 +54,14 @@ class JobServerProtocol(asyncio.Protocol):
 
     def process_request(self, message):
         if message['request']['requested']:
-            return reader.grab_next(self.worker_id)
-
+            next_command = reader.grab_next(self.worker_id)
+            if next_command:
+                response = CommandMessage("Command to be run", next_command)
+            else:
+                response = CallbackMessage("No command right now, come back later", True, 10000)
+                
+            return self.message_handler.sender.process(response)
+        
     def process_error(self, message):
         pass
 
