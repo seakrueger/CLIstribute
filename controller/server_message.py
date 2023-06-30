@@ -17,16 +17,16 @@ class _Sender():
         message = CommandMessage(self.hostname, "Command to run", command)
         return self._encode(message)
 
-    def no_command(self):
-        message = CallbackMessage(self.hostname, "No command right now, come back later", True, 10000)
+    def no_command(self, come_back: bool, interval = 10000):
+        message = CallbackMessage(self.hostname, "No command right now, come back later", come_back, interval)
         return self._encode(message)
 
     def failed_to_parse(self, exception):
-        message = ErrorMessage(self.hostname, "Could not parse to JSON", ErrorType.JSON, exception, 1234)
+        message = ErrorMessage(self.hostname, "Could not parse to JSON", ErrorType.JSON, exception, 0)
         return self._encode(message)
 
     def failed_to_find_message_type(self, exception):
-        message = ErrorMessage(self.hostname, "Could not parse msesage type", ErrorType.COMMAND, exception, 1234)
+        message = ErrorMessage(self.hostname, "Could not parse msesage type", ErrorType.COMMAND, exception, 0)
         return self._encode(message)
 
     def _encode(self, data):
