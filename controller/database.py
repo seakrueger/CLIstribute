@@ -71,13 +71,33 @@ class WorkerDatabase(Database):
                             """.format(ip, worker_hostname, status))
 
         self._close()
+    
+    def update_worker_init(self, worker_id, hostname, status):
+        self._connect()
+
+        self.cursor.execute(""" UPDATE workers
+                                SET name = '{}', status = '{}'
+                                WHERE worker_id = {};
+                            """.format(hostname, status, worker_id))
+
+        self._close()
+ 
+    def set_status(self, worker_id, status):
+        self._connect()
+
+        self.cursor.execute(""" UPDATE workers
+                                SET status = '{}'
+                                WHERE worker_id = {};
+                            """.format(status, worker_id))
+
+        self._close()
 
     def set_job_id(self, worker_id, job_id):
         self._connect()
 
         self.cursor.execute(""" UPDATE workers
                                 SET current_job_id = {}
-                                WHERE worker_id = {}
+                                WHERE worker_id = {};
                             """.format(job_id, worker_id))
 
         self._close()

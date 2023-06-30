@@ -1,7 +1,7 @@
 import asyncio
 
 from shared.message_handler import MessageHandler
-from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage 
+from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage 
 from shared.command import CommandStatus
 from reader import grab_next
 import database
@@ -14,7 +14,7 @@ class JobServerProtocol(asyncio.Protocol):
         ip = peername[0]
         self.worker_id = database.workers.get_worker_id_by_ip(ip)
         if not self.worker_id:
-            database.workers.add_worker(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
+            database.workers.add_worker(ip, "Awaiting initialization", "connecting")
             self.worker_id = database.workers.get_worker_id_by_ip(ip)
 
         self.message_handler = MessageHandler()
@@ -26,6 +26,8 @@ class JobServerProtocol(asyncio.Protocol):
             print(message['type'])
             
             match message['type']:
+                case MessageType.INIT:
+                    response = self.process_init(message)
                 case MessageType.JOB_STATUS:
                     response = self.process_status(message)
                 case MessageType.REQUEST_JOB:
@@ -46,6 +48,11 @@ class JobServerProtocol(asyncio.Protocol):
         finally:
             self.transport.close()
     
+    def process_init(self, message):
+        database.workers.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
+        response = InitMessage("Assigned Worker ID", worker_id=self.worker_id)
+        return self.message_handler.sender.process(response)
+    
     def process_status(self, message):
         if message['status']['successful']:
             database.commands.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
@@ -62,6 +69,8 @@ class JobServerProtocol(asyncio.Protocol):
                 response = CallbackMessage("No command right now, come back later", True, 10000)
                 
             return self.message_handler.sender.process(response)
+        else:
+            database.workers.set_status(self.worker_id, "not-accepting-work")
         
     def process_error(self, message):
         pass

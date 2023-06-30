@@ -7,6 +7,7 @@ class ErrorType(str, Enum):
     COMMAND = 'command'
 
 class MessageType(str, Enum):
+    INIT = 'init'
     JOB_STATUS = 'job_status'
     REQUEST_JOB = 'request_job'
     NO_COMMAND = 'no_command'
@@ -29,6 +30,14 @@ class Message(object):
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+class InitMessage(Message):
+    def __init__(self, message: str, hostname: str = None, status: str = None, worker_id: int = None) -> None:
+        super().__init__(MessageType.INIT, message)
+        self.init = {}
+        self.init['hostname'] = hostname
+        self.init['status'] = status
+        self.init['worker_id'] = worker_id
 
 class StatusMessage(Message):
     def __init__(self, message: str, successful: bool, job_id: int) -> None:
