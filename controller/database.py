@@ -62,4 +62,48 @@ class CommandDatabase(Database):
             return
         return result[0]
 
+class ServerDatabase(Database):
+    def add_server(self, ip, server_hostname, status):
+        self._connect()
 
+        self.cursor.execute(""" INSERT INTO servers (ip, name, status)
+                                VALUES('{}', '{}', '{}');
+                            """.format(ip, server_hostname, status))
+
+        self._close()
+
+    def set_job_id(self, server_id, job_id):
+        self._connect()
+
+        self.cursor.execute(""" UPDATE servers
+                                SET current_job_id = {}
+                                WHERE server_id = {}
+                            """.format(job_id, server_id))
+
+        self._close()
+    
+    def clear_job_id(self, server_id):
+        self._connect()
+
+        self.cursor.execute(""" UPDATE servers
+                                SET current_job_id = NULL
+                                WHERE server_id = {}
+                            """.format(server_id))
+
+        self._close()
+
+    def get_server_id_by_ip(self, ip):
+        self._connect()
+
+        self.cursor.execute(""" SELECT server_id FROM servers
+                                WHERE ip = '{}'
+                                ORDER BY server_id ASC
+                                LIMIT 1;
+                            """.format(ip))
+        result = self.cursor.fetchone()
+
+        self._close()
+
+        if not result:
+            return
+        return result[0]

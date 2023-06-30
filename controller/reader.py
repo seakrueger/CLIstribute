@@ -1,8 +1,8 @@
 from shared.command import Command, CommandStatus
-from database import CommandDatabase
+from database import CommandDatabase, ServerDatabase
 
 commands = CommandDatabase()
-currently_running = []
+servers = ServerDatabase()
 
 def read_input():
     while True:
@@ -20,7 +20,7 @@ def grab_next(server):
     next_command = commands.get_command(next_command_id)
     
     commands.update_command_status(next_command_id, CommandStatus.STARTING)
-    currently_running.append((server, next_command.executed_command))
+    servers.set_job_id(server, next_command_id)
 
     print("grabbed command")
     return next_command
