@@ -9,14 +9,14 @@ def init_database():
     cursor = db_con.cursor()
 
     cursor.execute("""CREATE TABLE IF NOT EXISTS commands (
-                        job_id INTEGER NOT NULL PRIMARY KEY,
+                        job_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         command TEXT NOT NULL,
                         status TEXT NOT NULL,
                         capture_stdout INTEGER
                     )
     """)
     cursor.execute("""CREATE TABLE IF NOT EXISTS servers (
-                        server_id INTEGER NOT NULL PRIMARY KEY,
+                        server_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         status TEXT NOT NULL,
                         current_job_id INTEGER 
