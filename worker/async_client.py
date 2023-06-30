@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from shared.message_handler import MessageHandler
 from shared.message import RequestMessage
@@ -24,7 +25,7 @@ class JobClientProtocol(asyncio.Protocol):
         print('The server closed the connection')
         self.on_con_lost.set_result(True)
 
-async def main():
+async def main(ip, port):
     # Get a reference to the event loop as we plan to use
     # low-level APIs.
     loop = asyncio.get_running_loop()
@@ -33,7 +34,7 @@ async def main():
 
     transport, protocol = await loop.create_connection(
         lambda: JobClientProtocol(on_con_lost),
-        '192.168.1.47', 8888)
+        str(ip), port)
 
     # Wait until the protocol signals that the connection
     # is lost and close the transport.
@@ -42,4 +43,10 @@ async def main():
     finally:
         transport.close()
 
-asyncio.run(main())
+if __name__ == "__main__":
+    args = sys.argv
+    if len(args) != 3:
+        print("Please provide both an ip and port")
+        quit()
+
+    asyncio.run(main(args[1], args[2]))
