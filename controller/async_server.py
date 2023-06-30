@@ -9,7 +9,7 @@ import database
 class JobServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
+        print(f"Connection from {peername}")
 
         ip = peername[0]
         self.worker_id = database.workers.get_worker_id_by_ip(ip)

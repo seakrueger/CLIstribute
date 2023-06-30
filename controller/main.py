@@ -1,8 +1,8 @@
 import sqlite3
 import threading
 
-from reader import read_input
 from async_server import start_server
+from reader import read_input
 
 def init_database():
     db_con = sqlite3.connect("clistribute.db")

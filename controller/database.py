@@ -17,33 +17,37 @@ class CommandDatabase(Database):
     def add_command(self, command: Command):
         self._connect()
 
-        self.cursor.execute(""" INSERT INTO commands (command, status, capture_stdout)
-                                VALUES('{}', '{}', {});
-                            """.format(command.executed_command, command.status, command.capture_std_out))
+        self.cursor.execute(f"""INSERT INTO commands (command, status, capture_stdout)
+                                VALUES('{command.executed_command}', '{command.status}', {command.capture_std_out});
+                            """)
 
         self._close()
 
     def update_command_status(self, job_id, status: CommandStatus):
         self._connect()
 
-        self.cursor.execute(""" UPDATE commands
-                                SET status = '{}'
-                                WHERE job_id = {};
-                            """.format(status, job_id))
+        self.cursor.execute(f"""UPDATE commands
+                                SET status = '{status}'
+                                WHERE job_id = {job_id};
+                            """)
     
         self._close()
 
     def get_command(self, job_id):
         self._connect()
 
-        self.cursor.execute(""" SELECT * FROM commands
-                                WHERE job_id = {};
-                            """.format(job_id))
+        self.cursor.execute(f"""SELECT * FROM commands
+                                WHERE job_id = {job_id};
+                            """)
         result = self.cursor.fetchone()
 
         self._close()
 
-        result_command = Command(result[1], result[2], result[3], result[0])
+        result_command = Command(command=result[1],
+                                 status=result[2],
+                                 capture_stdout=result[3],
+                                 job_id=result[0]
+                                )
         return result_command
 
     def get_next_queued(self):
@@ -66,60 +70,60 @@ class WorkerDatabase(Database):
     def add_worker(self, ip, worker_hostname, status):
         self._connect()
 
-        self.cursor.execute(""" INSERT INTO workers (ip, name, status)
-                                VALUES('{}', '{}', '{}');
-                            """.format(ip, worker_hostname, status))
+        self.cursor.execute(f"""INSERT INTO workers (ip, name, status)
+                                VALUES('{ip}', '{worker_hostname}', '{status}');
+                            """)
 
         self._close()
     
     def update_worker_init(self, worker_id, hostname, status):
         self._connect()
 
-        self.cursor.execute(""" UPDATE workers
-                                SET name = '{}', status = '{}'
-                                WHERE worker_id = {};
-                            """.format(hostname, status, worker_id))
+        self.cursor.execute(f"""UPDATE workers
+                                SET name = '{hostname}', status = '{status}'
+                                WHERE worker_id = {worker_id};
+                            """)
 
         self._close()
  
     def set_status(self, worker_id, status):
         self._connect()
 
-        self.cursor.execute(""" UPDATE workers
-                                SET status = '{}'
-                                WHERE worker_id = {};
-                            """.format(status, worker_id))
+        self.cursor.execute(f"""UPDATE workers
+                                SET status = '{status}'
+                                WHERE worker_id = {worker_id};
+                            """)
 
         self._close()
 
     def set_job_id(self, worker_id, job_id):
         self._connect()
 
-        self.cursor.execute(""" UPDATE workers
-                                SET current_job_id = {}
-                                WHERE worker_id = {};
-                            """.format(job_id, worker_id))
+        self.cursor.execute(f"""UPDATE workers
+                                SET current_job_id = {job_id}
+                                WHERE worker_id = {worker_id};
+                            """)
 
         self._close()
     
     def clear_job_id(self, worker_id):
         self._connect()
 
-        self.cursor.execute(""" UPDATE workers
+        self.cursor.execute(f"""UPDATE workers
                                 SET current_job_id = NULL
-                                WHERE worker_id = {}
-                            """.format(worker_id))
+                                WHERE worker_id = {worker_id}
+                            """)
 
         self._close()
 
     def get_worker_id_by_ip(self, ip):
         self._connect()
 
-        self.cursor.execute(""" SELECT worker_id FROM workers
-                                WHERE ip = '{}'
+        self.cursor.execute(f"""SELECT worker_id FROM workers
+                                WHERE ip = '{ip}'
                                 ORDER BY worker_id ASC
                                 LIMIT 1;
-                            """.format(ip))
+                            """)
         result = self.cursor.fetchone()
 
         self._close()
