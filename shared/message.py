@@ -44,7 +44,7 @@ class RequestMessage(Message):
         self.request['requested'] = request
 
 class ErrorMessage(Message):
-    def __init__(self, message: str, error_type: ErrorType, error_message: str, job_id: int) -> None:
+    def __init__(self, message: str, error_type: ErrorType, error_message: str, job_id: int = None) -> None:
         super().__init__(MessageType.ERROR, message)
         self.error = {}
         self.error['problem'] = error_type
