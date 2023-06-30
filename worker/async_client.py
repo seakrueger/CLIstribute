@@ -1,19 +1,20 @@
 import asyncio
 
-from client_message import MessageHandler
+from shared.message_handler import MessageHandler
+from shared.message import RequestMessage
 
 class JobClientProtocol(asyncio.Protocol):
     def __init__(self, on_con_lost):
-        self.messenger = MessageHandler()
+        self.messenge_handler = MessageHandler()
         self.on_con_lost = on_con_lost
 
     def connection_made(self, transport):
-        transport.write(self.messenger.sender.request_work())
+        transport.write(self.messenge_handler.sender.process(RequestMessage("Requesting Work", True)))
         print('Data sent')
 
     def data_received(self, data):
         try:
-            response = self.messenger.reciever.parse(data)
+            response = self.messenge_handler.reciever.parse(data)
         except ValueError as value_error:
             raise value_error
         
