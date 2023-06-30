@@ -107,3 +107,6 @@ class WorkerDatabase(Database):
         if not result:
             return
         return result[0]
+
+commands = CommandDatabase()
+workers = WorkerDatabase()

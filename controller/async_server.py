@@ -3,7 +3,8 @@ import asyncio
 from shared.message_handler import MessageHandler
 from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage 
 from shared.command import CommandStatus
-import reader
+from reader import grab_next
+import database
 
 class JobServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
@@ -11,10 +12,10 @@ class JobServerProtocol(asyncio.Protocol):
         print('Connection from {}'.format(peername))
 
         ip = peername[0]
-        self.worker_id = reader.workers.get_worker_id_by_ip(ip)
+        self.worker_id = database.workers.get_worker_id_by_ip(ip)
         if not self.worker_id:
-            reader.workers.add_worker(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
-            self.worker_id = reader.workers.get_worker_id_by_ip(ip)
+            database.workers.add_worker(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
+            self.worker_id = database.workers.get_worker_id_by_ip(ip)
 
         self.message_handler = MessageHandler()
         self.transport = transport
@@ -47,14 +48,14 @@ class JobServerProtocol(asyncio.Protocol):
     
     def process_status(self, message):
         if message['status']['successful']:
-            reader.commands.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
+            database.commands.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
         else:
-            reader.commands.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
-        reader.workers.clear_job_id(self.worker_id)
+            database.commands.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
+        database.workers.clear_job_id(self.worker_id)
 
     def process_request(self, message):
         if message['request']['requested']:
-            next_command = reader.grab_next(self.worker_id)
+            next_command = grab_next(self.worker_id)
             if next_command:
                 response = CommandMessage("Command to be run", next_command)
             else:
