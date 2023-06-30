@@ -17,7 +17,7 @@ class _Sender():
         message = CommandMessage(self.hostname, "Command to run", command)
         return self._encode(message)
 
-    def no_command(self, come_back: bool, interval = 10000):
+    def no_command(self, come_back: bool = True, interval = 10000):
         message = CallbackMessage(self.hostname, "No command right now, come back later", come_back, interval)
         return self._encode(message)
 
