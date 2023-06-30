@@ -1,6 +1,6 @@
 import sqlite3
 
-from shared.command import Command
+from shared.command import Command, CommandStatus
 
 class Database():
     def _connect(self):
@@ -23,7 +23,7 @@ class CommandDatabase(Database):
 
         self._close()
 
-    def update_command_status(self, job_id, status):
+    def update_command_status(self, job_id, status: CommandStatus):
         self._connect()
 
         self.cursor.execute(""" UPDATE commands
