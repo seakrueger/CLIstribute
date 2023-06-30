@@ -15,8 +15,8 @@ def init_database():
                         capture_stdout INTEGER
                     )
     """)
-    cursor.execute("""CREATE TABLE IF NOT EXISTS servers (
-                        server_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cursor.execute("""CREATE TABLE IF NOT EXISTS workers (
+                        worker_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         ip TEXT NOT NULL,
                         name TEXT NOT NULL,
                         status TEXT NOT NULL,

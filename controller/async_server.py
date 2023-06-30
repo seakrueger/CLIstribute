@@ -11,10 +11,10 @@ class JobServerProtocol(asyncio.Protocol):
         print('Connection from {}'.format(peername))
 
         ip = peername[0]
-        self.server_id = reader.servers.get_server_id_by_ip(ip)
-        if not self.server_id:
-            reader.servers.add_server(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
-            self.server_id = reader.servers.get_server_id_by_ip(ip)
+        self.worker_id = reader.workers.get_worker_id_by_ip(ip)
+        if not self.worker_id:
+            reader.workers.add_worker(ip, "test <FIXED WITH PROPER HANDSHAKE>", "online <wip>")
+            self.worker_id = reader.workers.get_worker_id_by_ip(ip)
 
         self.transport = transport
 
@@ -52,11 +52,11 @@ class JobServerProtocol(asyncio.Protocol):
             reader.commands.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
         else:
             reader.commands.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
-        reader.servers.clear_job_id(self.server_id)
+        reader.workers.clear_job_id(self.worker_id)
 
     def process_request(self, message):
         if message['request']['requested']:
-            return reader.grab_next(self.server_id)
+            return reader.grab_next(self.worker_id)
 
     def process_error(self, message):
         pass

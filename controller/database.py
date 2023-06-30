@@ -62,42 +62,42 @@ class CommandDatabase(Database):
             return
         return result[0]
 
-class ServerDatabase(Database):
-    def add_server(self, ip, server_hostname, status):
+class WorkerDatabase(Database):
+    def add_worker(self, ip, worker_hostname, status):
         self._connect()
 
-        self.cursor.execute(""" INSERT INTO servers (ip, name, status)
+        self.cursor.execute(""" INSERT INTO workers (ip, name, status)
                                 VALUES('{}', '{}', '{}');
-                            """.format(ip, server_hostname, status))
+                            """.format(ip, worker_hostname, status))
 
         self._close()
 
-    def set_job_id(self, server_id, job_id):
+    def set_job_id(self, worker_id, job_id):
         self._connect()
 
-        self.cursor.execute(""" UPDATE servers
+        self.cursor.execute(""" UPDATE workers
                                 SET current_job_id = {}
-                                WHERE server_id = {}
-                            """.format(job_id, server_id))
+                                WHERE worker_id = {}
+                            """.format(job_id, worker_id))
 
         self._close()
     
-    def clear_job_id(self, server_id):
+    def clear_job_id(self, worker_id):
         self._connect()
 
-        self.cursor.execute(""" UPDATE servers
+        self.cursor.execute(""" UPDATE workers
                                 SET current_job_id = NULL
-                                WHERE server_id = {}
-                            """.format(server_id))
+                                WHERE worker_id = {}
+                            """.format(worker_id))
 
         self._close()
 
-    def get_server_id_by_ip(self, ip):
+    def get_worker_id_by_ip(self, ip):
         self._connect()
 
-        self.cursor.execute(""" SELECT server_id FROM servers
+        self.cursor.execute(""" SELECT worker_id FROM workers
                                 WHERE ip = '{}'
-                                ORDER BY server_id ASC
+                                ORDER BY worker_id ASC
                                 LIMIT 1;
                             """.format(ip))
         result = self.cursor.fetchone()

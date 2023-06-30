@@ -1,8 +1,8 @@
 from shared.command import Command, CommandStatus
-from database import CommandDatabase, ServerDatabase
+from database import CommandDatabase, WorkerDatabase
 
 commands = CommandDatabase()
-servers = ServerDatabase()
+workers = WorkerDatabase()
 
 def read_input():
     while True:
@@ -12,7 +12,7 @@ def read_input():
         
         print("added command")
 
-def grab_next(server):
+def grab_next(worker):
     next_command_id = commands.get_next_queued()
     if not next_command_id:
         return
@@ -20,8 +20,7 @@ def grab_next(server):
     next_command = commands.get_command(next_command_id)
     
     commands.update_command_status(next_command_id, CommandStatus.STARTING)
-    servers.set_job_id(server, next_command_id)
+    workers.set_job_id(worker, next_command_id)
 
     print("grabbed command")
     return next_command
-
