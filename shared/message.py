@@ -26,10 +26,10 @@ class Message(object):
         return getattr(self, key)
 
 class StatusMessage(Message):
-    def __init__(self, server_name: str, message: str, succesful: bool, job_id: int) -> None:
+    def __init__(self, server_name: str, message: str, successful: bool, job_id: int) -> None:
         super().__init__(server_name, MessageType.JOB_STATUS, message)
         self.status = {}
-        self.status['succesful'] = succesful
+        self.status['successful'] = successful
         self.status['job_id'] = job_id
 
 class RequestMessage(Message):

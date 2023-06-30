@@ -12,8 +12,8 @@ class _Sender():
     def __init__(self) -> None:
         self.hostname = socket.gethostname()
 
-    def job_completed(self):
-        message = StatusMessage(self.hostname, "Job Completed", True, 1234)
+    def job_completed(self, job_id):
+        message = StatusMessage(self.hostname, "Job Completed", True, job_id)
         return self._encode(message)
     
     def request_work(self):
