@@ -9,15 +9,3 @@ def read_input():
         
         print("added command")
 
-def grab_next(worker):
-    next_command_id = database.commands.get_next_queued()
-    if not next_command_id:
-        return
-
-    next_command = database.commands.get_command(next_command_id)
-    
-    database.commands.update_command_status(next_command_id, CommandStatus.STARTING)
-    database.workers.set_job_id(worker, next_command_id)
-
-    print("grabbed command")
-    return next_command

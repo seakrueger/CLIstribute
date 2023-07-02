@@ -134,3 +134,16 @@ class WorkerDatabase(Database):
 
 commands = CommandDatabase()
 workers = WorkerDatabase()
+
+def grab_next(worker):
+    next_command_id = commands.get_next_queued()
+    if not next_command_id:
+        return
+
+    next_command = commands.get_command(next_command_id)
+    
+    commands.update_command_status(next_command_id, CommandStatus.STARTING)
+    workers.set_job_id(worker, next_command_id)
+
+    print("grabbed command")
+    return next_command

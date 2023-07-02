@@ -3,7 +3,6 @@ import asyncio
 from shared.message_handler import MessageHandler
 from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage 
 from shared.command import CommandStatus
-from reader import grab_next
 import database
 
 class JobServerProtocol(asyncio.Protocol):
@@ -62,7 +61,7 @@ class JobServerProtocol(asyncio.Protocol):
 
     def process_request(self, message):
         if message['request']['requested']:
-            next_command = grab_next(self.worker_id)
+            next_command = database.grab_next(self.worker_id)
             if next_command:
                 response = CommandMessage("Command to be run", next_command)
             else:
