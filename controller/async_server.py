@@ -1,4 +1,6 @@
+import queue
 import asyncio
+import threading
 
 from shared.message_handler import MessageHandler
 from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage 
@@ -86,6 +88,9 @@ async def main():
     async with server:
         await server.serve_forever()
 
-def start_server():
+def start_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
+    finished_shutdown.put(threading.current_thread().name)
     print("starting server")
     asyncio.run(main())
+
+    print(f"Finished {threading.current_thread().name} thread")
