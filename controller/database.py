@@ -1,7 +1,10 @@
 import sqlite3
 import threading
+import logging
 
 from shared.command import Command, CommandStatus
+
+logger = logging.getLogger("controller")
 
 class Database():
     _instance = None
@@ -34,6 +37,7 @@ class CommandDatabase(Database):
                             """)
 
             self._close()
+        logger.debug("Added Command to Database")
 
     def update_command_status(self, job_id, status: CommandStatus):
         with self._lock:
@@ -56,7 +60,8 @@ class CommandDatabase(Database):
             result = self.cursor.fetchone()
 
             self._close()
-
+        logger.debug("Grabbed Command from Database")
+        
         result_command = Command(command=result[1],
                                  status=result[2],
                                  capture_stdout=result[3],
@@ -91,6 +96,7 @@ class WorkerDatabase(Database):
                                 """)
 
             self._close()
+        logger.debug("Added Worker to Database")
     
     def update_worker_init(self, worker_id, hostname, status):
         with self._lock:
@@ -102,6 +108,7 @@ class WorkerDatabase(Database):
                                 """)
 
             self._close()
+        logger.debug("Updated Worker in Database")
  
     def set_status(self, worker_id, status):
         with self._lock:

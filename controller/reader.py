@@ -1,10 +1,13 @@
 import queue
 import asyncio
+import logging
 import threading
 from aioconsole import ainput
 
 from shared.command import Command, CommandStatus
 from database import CommandDatabase
+
+logger = logging.getLogger("controller")
 
 async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
     commands_db = CommandDatabase()
@@ -21,8 +24,8 @@ async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.
             pass
                 
     finished_shutdown.put(threading.current_thread().name)
-    print(f"Finished {threading.current_thread().name} thread")
+    logger.info(f"Finished {threading.current_thread().name} thread")
 
 def start_reader(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
-    print("starting reader")
+    logger.info(f"starting {threading.current_thread().name}")
     asyncio.run(read_input(shutdown_signal, finished_shutdown))
