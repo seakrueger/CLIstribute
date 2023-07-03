@@ -29,11 +29,8 @@ class ControllerApp():
         pass
 
     def _exit_handler(self, signal_num, frame):
-        if signal_num == 15:
-            print("Terminating")
-            sys.exit(1)
-
         print(f"Shutdown signal recieved: {signal_num}")
+        self.shutdown_time = time.time()
         self.shutdown_signal.set()
         while not self.finished_shutdown.full():
             print(f"Safely shutdown services: {list(self.finished_shutdown.queue)}")
@@ -73,6 +70,7 @@ def main():
         controller.run()
         time.sleep(1)
     else:
+        print(f"Shutdown in {(time.time() - controller.shutdown_time):.2f} seconds")
         sys.exit(0)
 
 if __name__ == "__main__":

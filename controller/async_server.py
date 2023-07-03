@@ -76,7 +76,11 @@ class JobServerProtocol(asyncio.Protocol):
     def process_error(self, message):
         pass
 
-async def main():
+async def wait_for_shutdown_sig(signal: threading.Event):
+    while not signal.is_set():
+        await asyncio.sleep(1)
+
+async def main(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
     # Get a reference to the event loop as we plan to use
     # low-level APIs.
     loop = asyncio.get_running_loop()
@@ -86,11 +90,11 @@ async def main():
         '', 8888)
 
     async with server:
-        await server.serve_forever()
+        await asyncio.wait([server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
+    
+    finished_shutdown.put(threading.current_thread().name)
+    print(f"Finished {threading.current_thread().name} thread")
 
 def start_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
-    finished_shutdown.put(threading.current_thread().name)
     print("starting server")
-    asyncio.run(main())
-
-    print(f"Finished {threading.current_thread().name} thread")
+    asyncio.run(main(shutdown_signal, finished_shutdown))
