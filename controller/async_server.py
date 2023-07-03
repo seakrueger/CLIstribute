@@ -1,5 +1,6 @@
 import queue
 import asyncio
+import logging
 import threading
 
 from shared.message_handler import MessageHandler
@@ -7,10 +8,12 @@ from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage,
 from shared.command import CommandStatus
 import database
 
+logger = logging.getLogger("controller")
+
 class JobServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        print(f"Connection from {peername}")
+        logger.info(f"Connection from {peername}")
 
         ip = peername[0]
         self.worker_id = database.workers.get_worker_id_by_ip(ip)
@@ -24,7 +27,7 @@ class JobServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         try:
             message = self.message_handler.reciever.parse(data)
-            print(message['type'])
+            logger.debug(f"Message type: {message['type']}")
             
             match message['type']:
                 case MessageType.INIT:
@@ -93,8 +96,8 @@ async def main(shutdown_signal: threading.Event, finished_shutdown: queue.Queue)
         await asyncio.wait([server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
     
     finished_shutdown.put(threading.current_thread().name)
-    print(f"Finished {threading.current_thread().name} thread")
+    logger.info(f"Finished {threading.current_thread().name} thread")
 
 def start_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
-    print("starting server")
+    logger.info(f"starting {threading.current_thread().name}")
     asyncio.run(main(shutdown_signal, finished_shutdown))

@@ -3,7 +3,9 @@ import time
 import queue
 import signal
 import sqlite3
+import logging
 import threading
+from logging.handlers import RotatingFileHandler
 
 from async_server import start_server
 from reader import start_reader
@@ -29,17 +31,18 @@ class ControllerApp():
         pass
 
     def _exit_handler(self, signal_num, frame):
-        print(f"Shutdown signal recieved: {signal_num}")
+        logger.debug(f"Shutdown signal recieved: {signal_num}")
         self.shutdown_time = time.time()
         self.shutdown_signal.set()
         while not self.finished_shutdown.full():
-            print(f"Safely shutdown services: {list(self.finished_shutdown.queue)}")
+            logger.debug(f"Safely shutdown services: {list(self.finished_shutdown.queue)}")
             time.sleep(0.25)
 
-        print(f"Safely shutdown services: {list(self.finished_shutdown.queue)}")
+        logger.info(f"Safely shutdown services: {list(self.finished_shutdown.queue)}")
         self.shutdown = True
 
     def _init_database(self):
+        logger.info("Creating database and tables")
         db_con = sqlite3.connect("clistribute.db")
         cursor = db_con.cursor()
 
@@ -70,8 +73,23 @@ def main():
         controller.run()
         time.sleep(1)
     else:
-        print(f"Shutdown in {(time.time() - controller.shutdown_time):.2f} seconds")
+        logger.info(f"Shutdown in {(time.time() - controller.shutdown_time):.2f} seconds")
         sys.exit(0)
 
 if __name__ == "__main__":
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG)
+    console_formatter = logging.Formatter("[%(levelname)s]: %(threadName)s - %(message)s")
+    console_handler.setFormatter(console_formatter)
+
+    file_handler = RotatingFileHandler("cli-controller.log", maxBytes = 5*1024*1024, backupCount = 2)
+    file_handler.setLevel(logging.WARNING)
+    file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(threadName)s - %(message)s")
+    file_handler.setFormatter(file_formatter)
+
+    logger = logging.getLogger("controller")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+
     main()

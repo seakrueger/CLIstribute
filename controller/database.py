@@ -1,6 +1,9 @@
 import sqlite3
+import logging
 
 from shared.command import Command, CommandStatus
+
+logger = logging.getLogger("controller")
 
 class Database():
     def _connect(self):
@@ -22,6 +25,7 @@ class CommandDatabase(Database):
                             """)
 
         self._close()
+        logger.debug("Added Command to Database")
 
     def update_command_status(self, job_id, status: CommandStatus):
         self._connect()
@@ -42,7 +46,8 @@ class CommandDatabase(Database):
         result = self.cursor.fetchone()
 
         self._close()
-
+        logger.debug("Grabbed Command from Database")
+        
         result_command = Command(command=result[1],
                                  status=result[2],
                                  capture_stdout=result[3],
@@ -75,6 +80,7 @@ class WorkerDatabase(Database):
                             """)
 
         self._close()
+        logger.debug("Added Worker to Database")
     
     def update_worker_init(self, worker_id, hostname, status):
         self._connect()
@@ -85,6 +91,7 @@ class WorkerDatabase(Database):
                             """)
 
         self._close()
+        logger.debug("Updated Worker in Database")
  
     def set_status(self, worker_id, status):
         self._connect()
@@ -145,5 +152,5 @@ def grab_next(worker):
     commands.update_command_status(next_command_id, CommandStatus.STARTING)
     workers.set_job_id(worker, next_command_id)
 
-    print("grabbed command")
+    logger.debug(f"Grabbed command: {next_command.job_id}")
     return next_command
