@@ -1,19 +1,21 @@
 import queue
 import asyncio
 import threading
-
 from aioconsole import ainput
+
 from shared.command import Command, CommandStatus
-import database
+from database import CommandDatabase
 
 async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
+    commands_db = CommandDatabase()
+
     print("Command: ", end='', flush=True)
     while not shutdown_signal.is_set():
         try:
             input_command = await asyncio.wait_for(ainput(""), 1)
             
             command = Command(input_command, CommandStatus.QUEUED, True)
-            database.commands.add_command(command)
+            commands_db.add_command(command)
             print("Command: ", end='', flush=True)
         except:
             pass

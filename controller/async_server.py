@@ -5,18 +5,24 @@ import threading
 from shared.message_handler import MessageHandler
 from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage 
 from shared.command import CommandStatus
-import database
+from database import CommandDatabase, WorkerDatabase
 
 class JobServerProtocol(asyncio.Protocol):
+    def __init__(self):
+        super().__init__()
+
+        self.commands_db = CommandDatabase()
+        self.workers_db = WorkerDatabase()
+
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         print(f"Connection from {peername}")
 
         ip = peername[0]
-        self.worker_id = database.workers.get_worker_id_by_ip(ip)
+        self.worker_id = self.workers_db.get_worker_id_by_ip(ip)
         if not self.worker_id:
-            database.workers.add_worker(ip, "Awaiting initialization", "connecting")
-            self.worker_id = database.workers.get_worker_id_by_ip(ip)
+            self.workers_db.add_worker(ip, "Awaiting initialization", "connecting")
+            self.worker_id = self.workers_db.get_worker_id_by_ip(ip)
 
         self.message_handler = MessageHandler()
         self.transport = transport
@@ -50,20 +56,20 @@ class JobServerProtocol(asyncio.Protocol):
             self.transport.close()
     
     def process_init(self, message):
-        database.workers.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
+        self.workers_db.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
         response = InitMessage("Assigned Worker ID", worker_id=self.worker_id)
         return self.message_handler.sender.process(response)
     
     def process_status(self, message):
         if message['status']['successful']:
-            database.commands.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
+            self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
         else:
-            database.commands.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
-        database.workers.clear_job_id(self.worker_id)
+            self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
+        self.workers_db.clear_job_id(self.worker_id)
 
     def process_request(self, message):
         if message['request']['requested']:
-            next_command = database.grab_next(self.worker_id)
+            next_command = self._grab_next(self.worker_id)
             if next_command:
                 response = CommandMessage("Command to be run", next_command)
             else:
@@ -71,11 +77,24 @@ class JobServerProtocol(asyncio.Protocol):
                 
             return self.message_handler.sender.process(response)
         else:
-            database.workers.set_status(self.worker_id, "not-accepting-work")
+            self.workers_db.set_status(self.worker_id, "not-accepting-work")
         
     def process_error(self, message):
         pass
 
+    def _grab_next(self, worker):
+        next_command_id = self.commands_db.get_next_queued()
+        if not next_command_id:
+            return
+
+        next_command = self.commands_db.get_command(next_command_id)
+    
+        self.commands_db.update_command_status(next_command_id, CommandStatus.STARTING)
+        self.workers_db.set_job_id(worker, next_command_id)
+
+        print("grabbed command")
+        return next_command
+         
 async def wait_for_shutdown_sig(signal: threading.Event):
     while not signal.is_set():
         await asyncio.sleep(1)
