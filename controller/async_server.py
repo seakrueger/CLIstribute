@@ -95,7 +95,7 @@ class JobServerProtocol(asyncio.Protocol):
         self.commands_db.update_command_status(next_command_id, CommandStatus.STARTING)
         self.workers_db.set_job_id(worker, next_command_id)
 
-        print("grabbed command")
+        logger.debug(f"Grabbed Command: {next_command_id}")
         return next_command
          
 async def wait_for_shutdown_sig(signal: threading.Event):
