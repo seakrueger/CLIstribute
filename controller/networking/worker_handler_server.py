@@ -117,6 +117,6 @@ async def main(shutdown_signal: threading.Event, finished_shutdown: queue.Queue)
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")
 
-def start_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
+def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
     logger.info(f"starting {threading.current_thread().name}")
     asyncio.run(main(shutdown_signal, finished_shutdown))

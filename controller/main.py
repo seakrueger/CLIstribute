@@ -7,7 +7,7 @@ import logging
 import threading
 from logging.handlers import RotatingFileHandler
 
-from async_server import start_server
+from networking.worker_handler_server import start_handler_server
 from reader import start_reader
 
 class ControllerApp():
@@ -21,11 +21,11 @@ class ControllerApp():
         self._init_database()
     
     def start(self):
-        i = threading.Thread(target=start_reader, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="Input")
-        i.start()
+        reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="User Input")
+        reader_thread.start()
 
-        o = threading.Thread(target=start_server, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="Output")
-        o.start()
+        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="Worker Handler")
+        handler_thread.start()
     
     def run(self):
         pass
