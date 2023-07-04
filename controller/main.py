@@ -21,10 +21,10 @@ class ControllerApp():
         self._init_database()
     
     def start(self):
-        reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="User Input")
+        reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="UserInputThread")
         reader_thread.start()
 
-        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="Worker Handler")
+        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal,self.finished_shutdown,), daemon=True, name="WorkerHandlerThread")
         handler_thread.start()
     
     def run(self):
