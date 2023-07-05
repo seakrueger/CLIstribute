@@ -103,16 +103,14 @@ async def wait_for_shutdown_sig(signal: threading.Event):
         await asyncio.sleep(1)
 
 async def main(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
-    # Get a reference to the event loop as we plan to use
-    # low-level APIs.
-    loop = asyncio.get_running_loop()
+    event_loop = asyncio.get_running_loop()
 
-    server = await loop.create_server(
+    tcp_server = await event_loop.create_server(
         lambda: JobServerProtocol(),
-        '', 8888)
+        '', 9600)
 
-    async with server:
-        await asyncio.wait([server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
+    async with tcp_server:
+        await asyncio.wait([tcp_server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
     
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")
