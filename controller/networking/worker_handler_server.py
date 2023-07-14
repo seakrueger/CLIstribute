@@ -102,19 +102,19 @@ async def wait_for_shutdown_sig(signal: threading.Event):
     while not signal.is_set():
         await asyncio.sleep(1)
 
-async def main(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
+async def main(shutdown_signal: threading.Event, addr):
     event_loop = asyncio.get_running_loop()
 
     tcp_server = await event_loop.create_server(
         lambda: JobServerProtocol(),
-        '', 9600)
+        addr[0], addr[1])
 
     async with tcp_server:
         await asyncio.wait([tcp_server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
     
+def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+    logger.info(f"starting {threading.current_thread().name} on {addr}")
+    asyncio.run(main(shutdown_signal, addr))
+    
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")
-
-def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
-    logger.info(f"starting {threading.current_thread().name}")
-    asyncio.run(main(shutdown_signal, finished_shutdown))

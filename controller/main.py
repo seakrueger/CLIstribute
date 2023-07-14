@@ -2,6 +2,7 @@ import sys
 import time
 import queue
 import signal
+import socket
 import sqlite3
 import logging
 import threading
@@ -15,20 +16,21 @@ class ControllerApp():
     def __init__(self) -> None:
         self.shutdown = False
         self.shutdown_signal = threading.Event()
-        self.finished_shutdown = queue.Queue(2)
+        self.finished_shutdown = queue.Queue(3)
         signal.signal(signal.SIGINT, self._exit_handler)
         signal.signal(signal.SIGTERM, self._exit_handler)
 
         self._init_database()
+        self.ip = self._resolve_local_ip()
     
     def start(self):
         reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="UserInputThread")
         reader_thread.start()
 
-        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="WorkerHandlerThread")
+        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), daemon=True, name="WorkerHandlerThread")
         handler_thread.start()
 
-        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="StdOutStreamThread")
+        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9601),), daemon=True, name="StdOutStreamThread")
         stdout_thread.start()
     
     def run(self):
@@ -68,6 +70,19 @@ class ControllerApp():
 
         db_con.commit()
         db_con.close()
+
+    def _resolve_local_ip(self):
+        temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        temp_socket.settimeout(0)
+        try:
+            temp_socket.connect(("10.254.254.254", 1))
+            ip = temp_socket.getsockname()[0]
+        except Exception:
+            ip = "127.0.0.1"
+        finally:
+            temp_socket.close()
+
+        return ip
 
 def main():
     controller = ControllerApp()
