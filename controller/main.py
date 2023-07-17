@@ -49,6 +49,7 @@ class ControllerApp():
         cursor.execute("""CREATE TABLE IF NOT EXISTS commands (
                             job_id INTEGER PRIMARY KEY AUTOINCREMENT,
                             command TEXT NOT NULL,
+                            args TEXT NOT NULL,
                             status TEXT NOT NULL,
                             capture_stdout INTEGER
                     )

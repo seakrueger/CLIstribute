@@ -32,8 +32,8 @@ class CommandDatabase(Database):
         with self._lock:
             self._connect()
 
-            self.cursor.execute(f"""INSERT INTO commands (command, status, capture_stdout)
-                                    VALUES('{command.executed_command}', '{command.status}', {command.capture_std_out});
+            self.cursor.execute(f"""INSERT INTO commands (command, args, status, capture_stdout)
+                                    VALUES('{command.executed_command}', '{command.args}', '{command.status}', {command.capture_std_out});
                             """)
 
             self._close()
@@ -63,8 +63,9 @@ class CommandDatabase(Database):
         logger.debug("Grabbed Command from Database")
         
         result_command = Command(command=result[1],
-                                 status=result[2],
-                                 capture_stdout=result[3],
+                                 args=result[2],
+                                 status=result[3],
+                                 capture_stdout=result[4],
                                  job_id=result[0]
                                 )
         return result_command
@@ -74,10 +75,10 @@ class CommandDatabase(Database):
             self._connect()
 
             self.cursor.execute(""" SELECT job_id, status FROM commands
-                                WHERE status = 'queued'
-                                ORDER BY job_id ASC
-                                LIMIT 1;
-                            """)
+                                    WHERE status = 'queued'
+                                    ORDER BY job_id ASC
+                                    LIMIT 1;
+                                """)
             result = self.cursor.fetchone()
 
             self._close()

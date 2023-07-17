@@ -27,9 +27,13 @@ async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.
 
         result = list(done)[0].result()
         if result:
-            command = Command(result, CommandStatus.QUEUED, True)
+            split = result.split()
+            ex_command = split[0]
+            split.pop(0)
+            args = " ".join(split)
+
+            command = Command(ex_command, args, CommandStatus.QUEUED, True)
             commands_db.add_command(command)
-            pass 
         else:
             for task in pending:
                 task.cancel()
