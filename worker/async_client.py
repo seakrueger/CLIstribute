@@ -14,7 +14,7 @@ class JobClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         transport.write(self.messenge_handler.sender.process(self.worker_id, self.message))
-        print('Data sent')
+        print(f"Data sent: {self.message}")
 
     def data_received(self, data):
         try:
@@ -30,12 +30,18 @@ class JobClientProtocol(asyncio.Protocol):
 
 async def send_message(loop, addr, worker_id, message: Message):
     on_con_lost = loop.create_future()
+
     transport, protocol = await loop.create_connection(
         lambda: JobClientProtocol(on_con_lost, worker_id, message),
         addr[0], addr[1])
+
     try:
         await on_con_lost
     finally:
-        result = protocol.response
-        transport.close()
+        try:
+            result = protocol.response
+        except AttributeError:
+            result = None
+        finally:
+            transport.close()
         return result
