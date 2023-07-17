@@ -34,7 +34,7 @@ class CommandDatabase(Database):
 
             self.cursor.execute(f"""INSERT INTO commands (command, status, capture_stdout)
                                     VALUES('{command.executed_command}', '{command.status}', {command.capture_std_out});
-                            """)
+                                """)
 
             self._close()
         logger.debug("Added Command to Database")
@@ -156,6 +156,22 @@ class WorkerDatabase(Database):
 
             self._close()
 
+        if not result:
+            return
+        return result[0]
+
+    def get_hostname_by_id(self, id):
+        with self._lock:
+            self._connect()
+
+            self.cursor.execute(f"""SELECT name FROM workers
+                                    WHERE worker_id = {id}
+                                    LIMIT 1;
+                                """)
+            result = self.cursor.fetchone()
+
+            self._close()
+        
         if not result:
             return
         return result[0]

@@ -3,15 +3,21 @@ import asyncio
 import logging
 import threading
 
+from database import WorkerDatabase
+
 logger = logging.getLogger("controller")
 
 class STDOutServerProtocol:
+    worker_db = WorkerDatabase()
+
     def connection_made(self, transport):
         self.transport = transport
     
     def datagram_received(self, data, addr):
-        logger.debug(f"Datagram recieved: {data} from {addr}")
-        message = data.decode()
+        worker = data.decode().rstrip()[-3:]
+        worker_name = self.worker_db.get_hostname_by_id(int(worker))
+        message = data.decode().rstrip()[:-3]
+        logger.debug(f"Datagram recieved: {message} from {worker_name}")
 
     def connection_lost(self, exc):
         pass
