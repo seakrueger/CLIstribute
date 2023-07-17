@@ -12,7 +12,8 @@ class _Sender():
     def __init__(self) -> None:
         self.hostname = socket.gethostname()
     
-    def process(self, message: Message):
+    def process(self, worker_id, message: Message):
+        message.append_server_id(worker_id)
         message.append_hostname(self.hostname)
         return self._encode(message)
 

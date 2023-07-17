@@ -51,17 +51,17 @@ class JobServerProtocol(asyncio.Protocol):
 
         except ValueError as e:
             response = ErrorMessage("Failed to parse message JSON", ErrorType.JSON, e)
-            self.transport.write(self.message_handler.sender.process(response))
+            self.transport.write(self.message_handler.sender.process(0, response))
         except NotImplementedError as e:
             response = ErrorMessage(f"Failed to find message of type {message['type']}", ErrorType.COMMAND, e)
-            self.transport.write(self.message_handler.sender.process(response))
+            self.transport.write(self.message_handler.sender.process(0, response))
         finally:
             self.transport.close()
     
     def process_init(self, message):
         self.workers_db.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
         response = InitMessage("Assigned Worker ID", worker_id=self.worker_id)
-        return self.message_handler.sender.process(response)
+        return self.message_handler.sender.process(0, response)
     
     def process_status(self, message):
         if message['status']['successful']:
@@ -78,7 +78,7 @@ class JobServerProtocol(asyncio.Protocol):
             else:
                 response = CallbackMessage("No command right now, come back later", True, 10000)
                 
-            return self.message_handler.sender.process(response)
+            return self.message_handler.sender.process(0, response)
         else:
             self.workers_db.set_status(self.worker_id, "not-accepting-work")
         

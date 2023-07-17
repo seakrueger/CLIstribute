@@ -8,8 +8,8 @@ class CommandStatus(str, Enum):
     FAILED = 'failed'
 
 class Command():
-    def __init__(self, command, args, status: CommandStatus, capture_stdout, job_id=0):
-        self.executed_command = command
+    def __init__(self, program, args, status: CommandStatus, capture_stdout, job_id=0):
+        self.program = program
         self.args = args
         self.status = status
         self.capture_std_out = capture_stdout
