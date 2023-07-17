@@ -65,6 +65,7 @@ class CommandMessage(Message):
         super().__init__(MessageType.COMMAND, message)
         self.command = {}
         self.command['command'] = command.executed_command
+        self.command['args'] = command.args
         self.command['capture_output'] = command.capture_std_out
         self.command['job_id'] = command.job_id
 
