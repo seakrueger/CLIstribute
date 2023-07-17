@@ -1,6 +1,6 @@
 from enum import Enum
 
-from shared.command import Command
+from shared.command import Command, CommandStatus
 
 class ErrorType(str, Enum):
     JSON = 'json'
@@ -40,9 +40,10 @@ class InitMessage(Message):
         self.init['worker_id'] = worker_id
 
 class StatusMessage(Message):
-    def __init__(self, message: str, successful: bool, job_id: int) -> None:
+    def __init__(self, message: str, status: CommandStatus, successful: bool, job_id: int) -> None:
         super().__init__(MessageType.JOB_STATUS, message)
         self.status = {}
+        self.status['status'] = status
         self.status['successful'] = successful
         self.status['job_id'] = job_id
 

@@ -64,11 +64,14 @@ class JobServerProtocol(asyncio.Protocol):
         return self.message_handler.sender.process(0, response)
     
     def process_status(self, message):
-        if message['status']['successful']:
-            self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.FINISHED)
+        if message['status']['finished'] == CommandStatus.FINISHED:
+            if message['status']['successful']:
+                self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.SUCCESSFUL)
+            else:
+                self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
+            self.workers_db.clear_job_id(self.worker_id)
         else:
-            self.commands_db.update_command_status(message['status']['job_id'], CommandStatus.FAILED)
-        self.workers_db.clear_job_id(self.worker_id)
+            self.commands_db.update_command_status(message['status']['job_id'], message['status']['status'])
 
     def process_request(self, message):
         if message['request']['requested']:

@@ -5,6 +5,7 @@ class CommandStatus(str, Enum):
     STARTING = 'starting'
     RUNNING = 'running'
     FINISHED = 'finished'
+    SUCCESSFUL = 'successful'
     FAILED = 'failed'
 
 class Command():
