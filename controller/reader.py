@@ -28,12 +28,7 @@ async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.
 
         result = list(done)[0].result()
         if result:
-            cmd = shlex.split(result)
-            program = cmd[0]
-            cmd.pop(0)
-            args = " ".join(cmd)
-
-            command = Command(program, args, CommandStatus.QUEUED, True)
+            command = Command(result, CommandStatus.QUEUED, True)
             commands_db.add_command(command)
         else:
             for task in pending:

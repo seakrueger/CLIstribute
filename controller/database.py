@@ -32,8 +32,8 @@ class CommandDatabase(Database):
         with self._lock:
             self._connect()
 
-            self.cursor.execute(f"""INSERT INTO commands (program, args, status, capture_stdout)
-                                    VALUES('{command.program}', '{command.args}', '{command.status}', {command.capture_std_out});
+            self.cursor.execute(f"""INSERT INTO commands (cmd, status, capture_stdout)
+                                    VALUES('{command.cmd}', '{command.status}', {command.capture_std_out});
                                 """)
 
             self._close()
@@ -62,10 +62,9 @@ class CommandDatabase(Database):
             self._close()
         logger.debug("Grabbed Command from Database")
         
-        result_command = Command(program=result[1],
-                                 args=result[2],
-                                 status=result[3],
-                                 capture_stdout=result[4],
+        result_command = Command(cmd=result[1],
+                                 status=result[2],
+                                 capture_stdout=result[3],
                                  job_id=result[0]
                                 )
         return result_command
