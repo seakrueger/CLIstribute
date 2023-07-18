@@ -1,9 +1,10 @@
 import asyncio
-import socket
-import sys
+import logging
 
 from shared.message_handler import MessageHandler
-from shared.message import Message, RequestMessage, InitMessage
+from shared.message import Message
+
+logger = logging.getLogger("worker")
 
 class JobClientProtocol(asyncio.Protocol):
     def __init__(self, on_con_lost, worker_id, message: Message):
@@ -14,7 +15,7 @@ class JobClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         transport.write(self.messenge_handler.sender.process(self.worker_id, self.message))
-        print(f"Data sent: {self.message}")
+        logger.debug(f"Data sent: {self.message}")
 
     def data_received(self, data):
         try:
@@ -23,9 +24,10 @@ class JobClientProtocol(asyncio.Protocol):
             raise value_error
         
         self.response = response
+        logger.debug(f"Data recieved: {self.response}")
 
     def connection_lost(self, exc):
-        print('The server closed the connection')
+        logger.debug('The server closed the connection')
         self.on_con_lost.set_result(True)
 
 async def send_message(loop, addr, worker_id, message: Message):

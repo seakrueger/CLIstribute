@@ -2,6 +2,8 @@ import sys
 import shlex
 import socket
 import asyncio
+import logging
+from logging.handlers import RotatingFileHandler
 
 import async_client
 import stdout_stream
@@ -19,13 +21,19 @@ class Worker():
         self.streamer = stdout_stream.Sender((self.ip, 9601), self.worker_id)
 
     async def init_connect(self):
+        logger.info("Initializing with controller")
         return await async_client.send_message(self.loop, self.addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
 
     async def request_work(self):
+        logger.info("Requesting work from controller")
         return await async_client.send_message(self.loop, self.addr, self.worker_id, RequestMessage("Requesting Work", True))
 
     async def execute_work(self, work):
         self.command = work["command"]
+        
+        work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
+        logger.info(f"Starting job {self.command['job_id']}")
+               
         try:
             cmd = shlex.split(self.command["cmd"])
             process = await asyncio.create_subprocess_exec(
@@ -42,12 +50,19 @@ class Worker():
                     break
                 full_log += buf
                 self.streamer.send(buf)
+            work_logger.info(full_log.decode())
 
             if process.returncode == 0 or process.returncode is None: 
+                work_logger.info(f"Job {self.command['job_id']} finished successfully")
+                logger.info(f"Job {self.command['job_id']} finished successfully")
                 await self._send_status("Job Finished", CommandStatus.FINISHED, True)
             else:
+                work_logger.warn(f"Job {self.command['job_id']} finished with an error")
+                logger.warn(f"Job {self.command['job_id']} finished with an error")
                 await self._send_status("Job Failed", CommandStatus.FINISHED, False)
-        except:
+        except Exception as e:
+            work_logger.warn(f"Job {self.command['job_id']} failed to start")
+            logger.exception(e)
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
     async def _send_status(self, message, status, success):
@@ -64,6 +79,7 @@ async def main(*args):
 
         if work["type"] == MessageType.NO_COMMAND:
             if work["callback"]["come_back"]:
+                logger.debug("No work found, waiting")
                 await asyncio.sleep(work["callback"]["interval"] / 1000)
                 continue
 
@@ -74,5 +90,30 @@ if __name__ == "__main__":
     if len(args) != 2:
         print("Please provide an ip address to connect to")
         quit()
+    
+    # General logging
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG)
+    console_formatter = logging.Formatter("[%(levelname)s]: %(message)s")
+    console_handler.setFormatter(console_formatter)
+
+    file_handler = RotatingFileHandler("cli-worker.log", maxBytes = 5*1024*1024, backupCount = 1)
+    file_handler.setLevel(logging.WARNING)
+    file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(message)s")
+    file_handler.setFormatter(file_formatter)
+
+    logger = logging.getLogger("worker")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(console_handler)
+
+    # STDOUT from CLI jobs
+    work_handler = RotatingFileHandler("work.log", maxBytes = 5*1024*1024, backupCount = 2)
+    work_handler.setLevel(logging.INFO)
+    work_formatter = logging.Formatter("%(asctime)s: %(message)s")
+    work_handler.setFormatter(work_formatter)
+
+    work_logger = logging.getLogger("running-work")
+    work_logger.setLevel(logging.INFO)
+    work_logger.addHandler(work_handler)
 
     asyncio.run(main(args))
