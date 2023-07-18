@@ -17,7 +17,7 @@ class STDOutServerProtocol:
         worker = data.decode().rstrip()[-3:]
         worker_name = self.worker_db.get_hostname_by_id(int(worker))
         message = data.decode().rstrip()[:-3]
-        logger.debug(f"Datagram recieved: {message} from {worker_name}")
+        logger.debug(f"{worker_name}: {message}")
 
     def connection_lost(self, exc):
         pass
