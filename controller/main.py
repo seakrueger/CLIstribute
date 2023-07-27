@@ -5,6 +5,7 @@ import signal
 import socket
 import sqlite3
 import logging
+import argparse
 import threading
 from logging.handlers import RotatingFileHandler
 
@@ -13,7 +14,9 @@ from networking.stdout_stream_endpoint import start_stdout_endpoint
 from reader import start_reader
 
 class ControllerApp():
-    def __init__(self) -> None:
+    def __init__(self, args) -> None:
+        self.args = args
+
         self.shutdown = False
         self.shutdown_signal = threading.Event()
         self.finished_shutdown = queue.Queue(3)
@@ -37,7 +40,7 @@ class ControllerApp():
         pass
 
     def _exit_handler(self, signal_num, frame):
-        logger.debug(f"Shutdown signal recieved: {signal_num}")
+        logger.warning(f"Shutdown signal recieved")
         self.shutdown_time = time.time()
         self.shutdown_signal.set()
         while not self.finished_shutdown.full():
@@ -84,8 +87,8 @@ class ControllerApp():
 
         return ip
 
-def main():
-    controller = ControllerApp()
+def main(*args):
+    controller = ControllerApp(args)
 
     controller.start()
     while not controller.shutdown:
@@ -96,8 +99,18 @@ def main():
         sys.exit(0)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+                        prog="CLIstribute Controller",
+                        description="Controller for distribute computing of command line jobs")
+    parser.add_argument("-v", "--verbose", action='store_true', help="Enable additional logging", required=False)
+
+    args = parser.parse_args()
+
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
+    if args.verbose:
+        console_handler.setLevel(logging.DEBUG)
+    else:
+        console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter("[%(levelname)s]: %(threadName)s - %(message)s")
     console_handler.setFormatter(console_formatter)
 
@@ -111,4 +124,4 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    main()
+    main(args)
