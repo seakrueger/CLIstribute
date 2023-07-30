@@ -11,7 +11,7 @@ from logging.handlers import RotatingFileHandler
 
 from networking.worker_handler_server import start_handler_server
 from networking.stdout_stream_endpoint import start_stdout_endpoint
-from reader import start_reader
+from ui.basic import start_reader
 
 class ControllerApp():
     def __init__(self, args) -> None:
