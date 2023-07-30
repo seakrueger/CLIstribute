@@ -87,7 +87,7 @@ class ControllerApp():
 
         return ip
 
-def main(*args):
+def main(args):
     controller = ControllerApp(args)
 
     controller.start()
@@ -96,6 +96,10 @@ def main(*args):
         time.sleep(1)
     else:
         logger.info(f"Shutdown in {(time.time() - controller.shutdown_time):.2f} seconds")
+
+        if args.silent:
+            print("\nShut down successfully")
+
         sys.exit(0)
 
 if __name__ == "__main__":
@@ -103,25 +107,29 @@ if __name__ == "__main__":
                         prog="CLIstribute Controller",
                         description="Controller for distribute computing of command line jobs")
     parser.add_argument("-v", "--verbose", action='store_true', help="Enable additional logging", required=False)
+    parser.add_argument("-s", "--silent", action='store_true', help="Disable logging to console", required=False)
 
     args = parser.parse_args()
 
-    console_handler = logging.StreamHandler(sys.stdout)
-    if args.verbose:
-        console_handler.setLevel(logging.DEBUG)
-    else:
-        console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter("[%(levelname)s]: %(threadName)s - %(message)s")
-    console_handler.setFormatter(console_formatter)
+    logger = logging.getLogger("controller")
+    logger.setLevel(logging.DEBUG)
+
+    if not args.silent:
+        console_handler = logging.StreamHandler(sys.stdout)
+        if args.verbose:
+            console_handler.setLevel(logging.DEBUG)
+        else:
+            console_handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter("[%(levelname)s]: %(threadName)s - %(message)s")
+        console_handler.setFormatter(console_formatter)
+        
+        logger.addHandler(console_handler)
 
     file_handler = RotatingFileHandler("cli-controller.log", maxBytes = 5*1024*1024, backupCount = 2)
     file_handler.setLevel(logging.WARNING)
     file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(threadName)s - %(message)s")
     file_handler.setFormatter(file_formatter)
 
-    logger = logging.getLogger("controller")
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
     main(args)
