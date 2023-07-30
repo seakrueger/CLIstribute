@@ -57,11 +57,11 @@ class Worker():
                 logger.info(f"Job {self.command['job_id']} finished successfully")
                 await self._send_status("Job Finished", CommandStatus.FINISHED, True)
             else:
-                work_logger.warn(f"Job {self.command['job_id']} finished with an error")
-                logger.warn(f"Job {self.command['job_id']} finished with an error")
+                work_logger.warning(f"Job {self.command['job_id']} finished with an error")
+                logger.warning(f"Job {self.command['job_id']} finished with an error")
                 await self._send_status("Job Failed", CommandStatus.FINISHED, False)
         except Exception as e:
-            work_logger.warn(f"Job {self.command['job_id']} failed to start")
+            work_logger.warning(f"Job {self.command['job_id']} failed to start")
             logger.exception(e)
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
