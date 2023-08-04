@@ -9,7 +9,10 @@ from shared.command import Command, CommandStatus
 from database import CommandDatabase, WorkerDatabase
 
 logger = logging.getLogger("controller")
+
 app = Flask(__name__)
+flask_logger = logging.getLogger('werkzeug')
+flask_logger.setLevel(logging.ERROR)
 
 commands_db = CommandDatabase()
 workers_db = WorkerDatabase()
