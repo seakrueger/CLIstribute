@@ -86,6 +86,19 @@ class CommandDatabase(Database):
             return
         return result[0]
 
+    def get_all_commands(self):
+        with self._lock:
+            self._connect()
+
+            self.cursor.execute(""" SELECT * FROM commands
+                                    ORDER BY job_id DESC
+                                """)
+            result = self.cursor.fetchall()
+
+            self._close()
+        
+        return result
+
 class WorkerDatabase(Database):
     def add_worker(self, ip, worker_hostname, status):
         with self._lock:
@@ -175,3 +188,16 @@ class WorkerDatabase(Database):
         if not result:
             return
         return result[0]
+
+    def get_all_workers(self):
+        with self._lock:
+            self._connect()
+
+            self.cursor.execute(""" SELECT * FROM workers
+                                    ORDER BY worker_id ASC
+                                """)
+            result = self.cursor.fetchall()
+
+            self._close()
+        
+        return result

@@ -11,8 +11,8 @@ from logging.handlers import RotatingFileHandler
 
 from networking.worker_handler_server import start_handler_server
 from networking.stdout_stream_endpoint import start_stdout_endpoint
+from networking.web_server import start_webapp
 from ui.basic import start_reader
-from server import start_webapp
 
 class ControllerApp():
     def __init__(self, args) -> None:
@@ -29,7 +29,7 @@ class ControllerApp():
     
     def start(self):
         if self.args.webapp:
-            webapp_thread = threading.Thread(target=start_webapp, daemon=True, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), name="WebApp")
+            webapp_thread = threading.Thread(target=start_webapp, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), daemon=True, name="WebApp")
             webapp_thread.start()
         else:
             reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="UserInputThread")
@@ -56,7 +56,7 @@ class ControllerApp():
         self.shutdown = True
 
     def _init_database(self):
-        logger.info("Creating database and tables")
+        logger.debug("Creating database and tables")
         db_con = sqlite3.connect("clistribute.db")
         cursor = db_con.cursor()
 

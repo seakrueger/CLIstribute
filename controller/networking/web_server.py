@@ -1,0 +1,62 @@
+import json
+import queue
+import logging
+import threading
+
+from flask import Flask, send_from_directory, request
+
+from shared.command import Command, CommandStatus
+from database import CommandDatabase, WorkerDatabase
+
+logger = logging.getLogger("controller")
+app = Flask(__name__)
+
+commands_db = CommandDatabase()
+workers_db = WorkerDatabase()
+
+# Path for our main Svelte page
+@app.route("/")
+def base():
+    return send_from_directory('ui/svelte-webapp/public', 'index.html')
+
+# Path for all the static files (compiled JS/CSS, etc.)
+@app.route("/<path:path>")
+def home(path):
+    return send_from_directory('ui/svelte-webapp/public', path)
+
+@app.route("/api/submit")
+def submission():
+    raw_data = request.args.get('data')
+    data = json.loads(raw_data)
+
+    command = Command(data["cmd"], CommandStatus.QUEUED, data["capture"])
+    commands_db.add_command(command)
+
+    response = json.dumps({
+        "status": "okay"
+    })
+    return response
+
+@app.route("/api/commands")
+def get_commands():
+    commands = commands_db.get_all_commands()
+    
+    commands_json = json.dumps([dict(command) for command in commands])
+    
+    return commands_json
+
+@app.route("/api/workers")
+def get_workers():
+    workers = workers_db.get_all_workers()
+
+    worker_json = json.dumps([dict(worker) for worker in workers])
+
+    return worker_json
+
+def start_webapp(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+    finished_shutdown.put(threading.current_thread().name)
+
+    logger.info(f"starting {threading.current_thread().name} on {addr}")
+    app.run(port=addr[1])
+
+    logger.info(f"Finished {threading.current_thread().name} thread")
