@@ -13,20 +13,20 @@ from shared.command import CommandStatus
 class Worker():
     def __init__(self, ip):
         self.loop = asyncio.get_running_loop()
-        self.ip = ip
-        self.addr = (ip, 9600)
+        self.tcp_addr = (ip, 9601)
+        self.udp_addr = (ip, 9602)
 
     def set_id(self, worker_id):
         self.worker_id = worker_id
-        self.streamer = stdout_stream.Sender((self.ip, 9601), self.worker_id)
+        self.streamer = stdout_stream.Sender(self.udp_addr, self.worker_id)
 
     async def init_connect(self):
         logger.info("Initializing with controller")
-        return await async_client.send_message(self.loop, self.addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
+        return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
 
     async def request_work(self):
         logger.info("Requesting work from controller")
-        return await async_client.send_message(self.loop, self.addr, self.worker_id, RequestMessage("Requesting Work", True))
+        return await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, RequestMessage("Requesting Work", True))
 
     async def execute_work(self, work):
         self.command = work["command"]
@@ -67,7 +67,7 @@ class Worker():
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
     async def _send_status(self, message, status, success):
-        await async_client.send_message(self.loop, self.addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
+        await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
 
 async def main(*args):
     worker = Worker(args[0][1])

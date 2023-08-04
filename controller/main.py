@@ -11,6 +11,7 @@ from logging.handlers import RotatingFileHandler
 
 from networking.worker_handler_server import start_handler_server
 from networking.stdout_stream_endpoint import start_stdout_endpoint
+from networking.web_server import start_webapp
 from ui.basic import start_reader
 
 class ControllerApp():
@@ -27,13 +28,17 @@ class ControllerApp():
         self.ip = self._resolve_local_ip()
     
     def start(self):
-        reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="UserInputThread")
-        reader_thread.start()
+        if self.args.webapp:
+            webapp_thread = threading.Thread(target=start_webapp, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), daemon=True, name="WebApp")
+            webapp_thread.start()
+        else:
+            reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="UserInputThread")
+            reader_thread.start()
 
-        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), daemon=True, name="WorkerHandlerThread")
+        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9601),), daemon=True, name="WorkerHandlerThread")
         handler_thread.start()
 
-        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9601),), daemon=True, name="StdOutStreamThread")
+        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9602),), daemon=True, name="StdOutStreamThread")
         stdout_thread.start()
     
     def run(self):
@@ -51,7 +56,7 @@ class ControllerApp():
         self.shutdown = True
 
     def _init_database(self):
-        logger.info("Creating database and tables")
+        logger.debug("Creating database and tables")
         db_con = sqlite3.connect("clistribute.db")
         cursor = db_con.cursor()
 
@@ -104,10 +109,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-                        prog="CLIstribute Controller",
+                        prog="Controller (CLIstribute)",
                         description="Controller for distribute computing of command line jobs")
     parser.add_argument("-v", "--verbose", action='store_true', help="Enable additional logging", required=False)
     parser.add_argument("-s", "--silent", action='store_true', help="Disable logging to console", required=False)
+    parser.add_argument("--webapp", action='store_true', help="Run %(prog)s with a webapp", required=False)
 
     args = parser.parse_args()
 
