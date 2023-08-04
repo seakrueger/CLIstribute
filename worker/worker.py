@@ -49,7 +49,8 @@ class Worker():
                 if not buf:
                     break
                 full_log += buf
-                self.streamer.send(buf)
+                if self.command["capture_output"]:
+                    self.streamer.send(buf)
             work_logger.info(full_log.decode())
 
             if process.returncode == 0 or process.returncode is None: 
