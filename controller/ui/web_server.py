@@ -14,15 +14,13 @@ app = Flask(__name__)
 commands_db = CommandDatabase()
 workers_db = WorkerDatabase()
 
-# Path for our main Svelte page
 @app.route("/")
 def base():
-    return send_from_directory('ui/svelte-webapp/public', 'index.html')
+    return send_from_directory('svelte-webapp/public', 'index.html')
 
-# Path for all the static files (compiled JS/CSS, etc.)
 @app.route("/<path:path>")
 def home(path):
-    return send_from_directory('ui/svelte-webapp/public', path)
+    return send_from_directory('svelte-webapp/public', path)
 
 @app.route("/api/submit")
 def submission():
