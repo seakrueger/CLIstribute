@@ -55,6 +55,6 @@ def start_webapp(shutdown_signal: threading.Event, finished_shutdown: queue.Queu
     finished_shutdown.put(threading.current_thread().name)
 
     logger.info(f"starting {threading.current_thread().name} on {addr}")
-    app.run(port=addr[1])
+    app.run(host=addr[0], port=addr[1])
 
     logger.info(f"Finished {threading.current_thread().name} thread")
