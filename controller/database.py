@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import threading
 import logging
@@ -10,6 +11,8 @@ class Database():
     _instance = None
     _lock = threading.Lock()
 
+    db_path = os.getenv("CLISTRIBUTE_DB", "clistribute.db")
+
     def __new__(cls):
         if cls._instance is None:
             with cls._lock:
@@ -18,7 +21,7 @@ class Database():
         return cls._instance
 
     def _connect(self):
-        self.db_con = sqlite3.connect("clistribute.db")
+        self.db_con = sqlite3.connect(self.db_path)
         self.db_con.row_factory = sqlite3.Row
 
         self.cursor = self.db_con.cursor()

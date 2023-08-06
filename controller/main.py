@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import queue
@@ -57,7 +58,9 @@ class ControllerApp():
 
     def _init_database(self):
         logger.debug("Creating database and tables")
-        db_con = sqlite3.connect("clistribute.db")
+
+        db_path = os.getenv("CLISTRIBUTE_DB", "clistribute.db")
+        db_con = sqlite3.connect(db_path)
         cursor = db_con.cursor()
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS commands (
@@ -131,8 +134,9 @@ if __name__ == "__main__":
         
         logger.addHandler(console_handler)
 
-    file_handler = RotatingFileHandler("cli-controller.log", maxBytes = 5*1024*1024, backupCount = 2)
-    file_handler.setLevel(logging.WARNING)
+    log_path = os.getenv("CLISTRIBUTE_LOGS", "cli-controller.log")
+    file_handler = RotatingFileHandler(log_path, maxBytes = 5*1024*1024, backupCount = 2)
+    file_handler.setLevel(logging.INFO)
     file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(threadName)s - %(message)s")
     file_handler.setFormatter(file_formatter)
 
