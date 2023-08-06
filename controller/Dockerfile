@@ -11,9 +11,9 @@ RUN npm run build
 # Main
 FROM python:3.10-bookworm
 
-ARG PATH=/etc/clistribute
-ARG LOG_PATH=${PATH}/logs
-ARG DB_PATH=${PATH}/database
+ARG SAVE_PATH=/etc/clistribute
+ARG LOG_PATH=${SAVE_PATH}/logs
+ARG DB_PATH=${SAVE_PATH}/database
 
 WORKDIR /clistribute
 
@@ -26,10 +26,10 @@ COPY --from=svelte-builder /client/public/build/ ./ui/svelte-webapp/public/
 
 ENV CLISTRIBUTE_LOGS=${LOG_PATH}/cli-controller.log
 ENV CLISTRIBUTE_DB=${DB_PATH}/clistribute.db
-RUN mkdir -p ${PATH}/{logs,database}
+RUN mkdir -p ${SAVE_PATH}/{logs,database}
 
 EXPOSE 9600
 EXPOSE 9601/tcp 9602/udp
-VOLUME [ ${PATH} ]
+VOLUME [ ${SAVE_PATH} ]
 
 CMD [ "python3", "main.py", "--webapp" ]
