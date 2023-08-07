@@ -13,6 +13,7 @@ class MessageType(str, Enum):
     NO_COMMAND = 'no_command'
     COMMAND = 'command'
     ERROR = 'error'
+    PING = 'ping'
 
 class Message(object):
     def __init__(self, message_type: MessageType, message: str) -> None:
@@ -75,3 +76,7 @@ class CallbackMessage(Message):
         self.callback = {}
         self.callback['come_back'] = come_back
         self.callback['interval'] = interval_ms
+
+class PingMessage(Message):
+    def __init__(self, message) -> None:
+        super().__init__(MessageType.PING, message)

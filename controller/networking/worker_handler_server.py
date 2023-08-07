@@ -4,7 +4,7 @@ import logging
 import threading
 
 from shared.message_handler import MessageHandler
-from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage 
+from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage, PingMessage
 from shared.command import CommandStatus
 from database import CommandDatabase, WorkerDatabase
 
@@ -44,6 +44,8 @@ class JobServerProtocol(asyncio.Protocol):
                     response = self.process_request(message)
                 case MessageType.ERROR:
                     response = self.process_error(message) 
+                case MessageType.PING:
+                    response = self.process_ping(message)
                 case _:
                     raise NotImplemented
             if response:
@@ -87,6 +89,10 @@ class JobServerProtocol(asyncio.Protocol):
         
     def process_error(self, message):
         pass
+
+    def process_ping(self, message):
+        response = PingMessage("pong")
+        return self.message_handler.sender.process(0, response)
 
     def _grab_next(self, worker):
         next_command_id = self.commands_db.get_next_queued()
