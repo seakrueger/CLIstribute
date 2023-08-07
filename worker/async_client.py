@@ -30,16 +30,18 @@ class JobClientProtocol(asyncio.Protocol):
         logger.debug('The server closed the connection')
         self.on_con_lost.set_result(True)
 
-async def send_message(loop, addr, worker_id, message: Message):
+async def send_message(loop, addr, worker_id, message: Message, timeout=3):
     on_con_lost = loop.create_future()
 
     # Timeout after x seconds
     try:
         transport, protocol = await asyncio.wait_for(loop.create_connection(
             lambda: JobClientProtocol(on_con_lost, worker_id, message),
-            addr[0], addr[1]), 3)
-    except:
+            addr[0], addr[1]), timeout)
+    except asyncio.exceptions.TimeoutError:
         raise TimeoutError
+    except ConnectionRefusedError:
+        raise ConnectionRefusedError
 
     try:
         await on_con_lost

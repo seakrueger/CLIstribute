@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 
 import async_client
 import stdout_stream
-from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType
+from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage
 from shared.command import CommandStatus
 
 class Worker():
@@ -16,6 +16,8 @@ class Worker():
         self.loop = asyncio.get_running_loop()
         self.tcp_addr = (ip, 9601)
         self.udp_addr = (ip, 9602)
+
+        self.status_queue = []
 
     def set_id(self, worker_id):
         self.worker_id = worker_id
@@ -26,12 +28,18 @@ class Worker():
         try:
             return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
         except TimeoutError:
-            logger.error("Failed to connect to controller server (5 second connection timeout)")
-            sys.exit(1)
+            self._exit("3 second connection timeout")
+        except ConnectionRefusedError:
+            self._exit("connection refused")
 
     async def request_work(self):
         logger.info("Requesting work from controller")
-        return await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, RequestMessage("Requesting Work", True))
+        try:
+            return await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, RequestMessage("Requesting Work", True))
+        except TimeoutError:
+            self._exit("3 second connection timeout")
+        except ConnectionRefusedError:
+            self._exit("connection refused")
 
     async def execute_work(self, work):
         self.command = work["command"]
@@ -71,8 +79,31 @@ class Worker():
             logger.exception(e)
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
+        await asyncio.sleep(20)
+        if self.status_queue:
+            logger.debug("Attempting to send message queue")
+            try:
+                await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, PingMessage("ping?"), timeout=120)
+
+                for item in self.status_queue:
+                    await self._send_status(item[0], item[1], item[2])
+            except TimeoutError as e:
+                logger.critical("Exiting with messages in queue")
+                for item in self.status_queue:
+                    logger.warning(f"Queued message: {item[0]}")
+                self._exit("120 second connection timeout")
+            except ConnectionRefusedError:
+                self._exit("connection refused")
+
     async def _send_status(self, message, status, success):
-        await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
+        try:
+            await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
+        except Exception:
+            self.status_queue.append([message, status, success])
+
+    def _exit(self, reason):
+        logger.error(f"Failed to connect to controller server ({reason})")
+        sys.exit(1)
 
 async def main(ip):
     worker = Worker(ip)
