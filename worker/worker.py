@@ -43,10 +43,10 @@ class Worker():
 
     async def execute_work(self, work):
         self.command = work["command"]
-        
+
         work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
         logger.info(f"Starting job {self.command['job_id']}")
-               
+
         try:
             cmd = shlex.split(self.command["cmd"])
             process = await asyncio.create_subprocess_exec(
@@ -56,15 +56,7 @@ class Worker():
 
             await self._send_status("Running Job", CommandStatus.RUNNING, False)
 
-            full_log = b""
-            while process.returncode is None:
-                buf = await process.stdout.read(20)
-                if not buf:
-                    break
-                full_log += buf
-                if self.command["capture_output"]:
-                    self.streamer.send(buf)
-            work_logger.info(full_log.decode())
+            await self._capture_output(process)
 
             if process.returncode == 0 or process.returncode is None: 
                 work_logger.info(f"Job {self.command['job_id']} finished successfully")
@@ -79,27 +71,43 @@ class Worker():
             logger.exception(e)
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
-        await asyncio.sleep(20)
         if self.status_queue:
-            logger.debug("Attempting to send message queue")
-            try:
-                await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, PingMessage("ping?"), timeout=120)
-
-                for item in self.status_queue:
-                    await self._send_status(item[0], item[1], item[2])
-            except TimeoutError as e:
-                logger.critical("Exiting with messages in queue")
-                for item in self.status_queue:
-                    logger.warning(f"Queued message: {item[0]}")
-                self._exit("120 second connection timeout")
-            except ConnectionRefusedError:
-                self._exit("connection refused")
+            self._dump_message_queue()
 
     async def _send_status(self, message, status, success):
         try:
             await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
         except Exception:
             self.status_queue.append([message, status, success])
+
+    async def _capture_output(self, process):
+        full_log = b""
+        while process.returncode is None:
+            buf = await process.stdout.read(20)
+            if not buf:
+                break
+            full_log += buf
+            if self.command["capture_output"]:
+                self.streamer.send(buf)
+        work_logger.info(full_log.decode())
+
+    async def _dump_message_queue(self):
+        logger.debug("Attempting to send message queue")
+        try:
+            await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, PingMessage("ping?"), timeout=120)
+
+            for item in self.status_queue:
+                await self._send_status(item[0], item[1], item[2])
+        except TimeoutError as e:
+            logger.critical("Exiting with messages in queue")
+            for item in self.status_queue:
+                logger.warning(f"Queued message: {item[0]}")
+            self._exit("120 second connection timeout")
+        except ConnectionRefusedError:
+            logger.critical("Exiting with messages in queue")
+            for item in self.status_queue:
+                logger.warning(f"Queued message: {item[0]}")
+            self._exit("connection refused")
 
     def _exit(self, reason):
         logger.error(f"Failed to connect to controller server ({reason})")
