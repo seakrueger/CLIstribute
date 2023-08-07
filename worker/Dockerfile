@@ -1,6 +1,7 @@
 FROM python:3.10-bookworm
 
 ENV CONTROLLER_IP=127.0.1.1
+ENV LOG_DEBUG=0
 
 ARG LOG_PATH=/var/log/clistribute
 

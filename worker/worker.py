@@ -137,10 +137,14 @@ if __name__ == "__main__":
         if len(args) != 2:
             print("Please provide an ip address to connect to")
             quit()
-    
+
     # General logging
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
+    debug_level = os.getenv("LOG_DEBUG", 0)
+    if int(debug_level) == 1:
+        console_handler.setLevel(logging.DEBUG)
+    else:
+        console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter("[%(levelname)s]: %(message)s")
     console_handler.setFormatter(console_formatter)
 
