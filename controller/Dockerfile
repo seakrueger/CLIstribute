@@ -11,6 +11,8 @@ RUN npm run build
 # Main
 FROM python:3.10-bookworm
 
+ENV LOG_DEBUG=0
+
 ARG LOG_PATH=/var/log/clistribute
 ARG DB_PATH=/var/clistribute
 
