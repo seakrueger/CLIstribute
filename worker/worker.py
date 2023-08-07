@@ -1,3 +1,4 @@
+import os
 import sys
 import shlex
 import socket
@@ -69,8 +70,8 @@ class Worker():
     async def _send_status(self, message, status, success):
         await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
 
-async def main(*args):
-    worker = Worker(args[0][1])
+async def main(ip):
+    worker = Worker(ip)
 
     response = await worker.init_connect()
     worker.set_id(response["init"]["worker_id"])
@@ -87,10 +88,12 @@ async def main(*args):
         await worker.execute_work(work)
 
 if __name__ == "__main__":
-    args = sys.argv
-    if len(args) != 2:
-        print("Please provide an ip address to connect to")
-        quit()
+    ip = os.getenv("CONTROLLER_IP")
+    if not ip:
+        args = sys.argv
+        if len(args) != 2:
+            print("Please provide an ip address to connect to")
+            quit()
     
     # General logging
     console_handler = logging.StreamHandler(sys.stdout)
@@ -98,7 +101,8 @@ if __name__ == "__main__":
     console_formatter = logging.Formatter("[%(levelname)s]: %(message)s")
     console_handler.setFormatter(console_formatter)
 
-    file_handler = RotatingFileHandler("cli-worker.log", maxBytes = 5*1024*1024, backupCount = 1)
+    log_path = os.getenv("CLISTRIBUTE_LOGS", "cli-worker.log")
+    file_handler = RotatingFileHandler(log_path, maxBytes = 5*1024*1024, backupCount = 1)
     file_handler.setLevel(logging.WARNING)
     file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(message)s")
     file_handler.setFormatter(file_formatter)
@@ -108,7 +112,8 @@ if __name__ == "__main__":
     logger.addHandler(console_handler)
 
     # STDOUT from CLI jobs
-    work_handler = RotatingFileHandler("work.log", maxBytes = 5*1024*1024, backupCount = 2)
+    work_log_path = os.getenv("WORK_LOGS", "work.log")
+    work_handler = RotatingFileHandler(work_log_path, maxBytes = 5*1024*1024, backupCount = 2)
     work_handler.setLevel(logging.INFO)
     work_formatter = logging.Formatter("%(asctime)s: %(message)s")
     work_handler.setFormatter(work_formatter)
@@ -117,4 +122,4 @@ if __name__ == "__main__":
     work_logger.setLevel(logging.INFO)
     work_logger.addHandler(work_handler)
 
-    asyncio.run(main(args))
+    asyncio.run(main(ip))
