@@ -23,7 +23,11 @@ class Worker():
 
     async def init_connect(self):
         logger.info("Initializing with controller")
-        return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
+        try:
+            return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
+        except TimeoutError:
+            logger.error("Failed to connect to controller server (5 second connection timeout)")
+            sys.exit(1)
 
     async def request_work(self):
         logger.info("Requesting work from controller")

@@ -33,9 +33,13 @@ class JobClientProtocol(asyncio.Protocol):
 async def send_message(loop, addr, worker_id, message: Message):
     on_con_lost = loop.create_future()
 
-    transport, protocol = await loop.create_connection(
-        lambda: JobClientProtocol(on_con_lost, worker_id, message),
-        addr[0], addr[1])
+    # Timeout after x seconds
+    try:
+        transport, protocol = await asyncio.wait_for(loop.create_connection(
+            lambda: JobClientProtocol(on_con_lost, worker_id, message),
+            addr[0], addr[1]), 3)
+    except:
+        raise TimeoutError
 
     try:
         await on_con_lost
