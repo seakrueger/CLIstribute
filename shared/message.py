@@ -14,6 +14,7 @@ class MessageType(str, Enum):
     COMMAND = 'command'
     ERROR = 'error'
     PING = 'ping'
+    SHUTDOWN = 'shutdown'
 
 class Message(object):
     def __init__(self, message_type: MessageType, message: str) -> None:
@@ -80,3 +81,7 @@ class CallbackMessage(Message):
 class PingMessage(Message):
     def __init__(self, message) -> None:
         super().__init__(MessageType.PING, message)
+
+class ShutdownMessage(Message):
+    def __init__(self):
+        super().__init__(MessageType.SHUTDOWN, "Shutting down")
