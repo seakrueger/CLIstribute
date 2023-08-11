@@ -89,6 +89,7 @@ class Worker():
             full_log += buf
             if self.command["capture_output"]:
                 self.streamer.send(buf)
+        self.streamer.finish()
         work_logger.info(full_log.decode())
 
     async def _dump_message_queue(self):
