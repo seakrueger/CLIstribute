@@ -14,10 +14,14 @@ class STDOutServerProtocol:
         self.transport = transport
     
     def datagram_received(self, data, addr):
-        worker = data.decode().rstrip()[-3:]
-        worker_name = self.worker_db.get_hostname_by_id(int(worker))
-        message = data.decode().rstrip()[:-3]
-        logger.debug(f"{worker_name}: {message}")
+        decoded_data = data.decode().rstrip()
+        worker_id = decoded_data[-3:]
+        message = decoded_data[:-3]
+
+        if message == "<<EOM>>":
+            logger.debug(f"{worker_id}: EOM recieved")
+
+        logger.debug(f"{worker_id}: {message}")
 
     def connection_lost(self, exc):
         pass
