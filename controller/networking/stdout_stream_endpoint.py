@@ -19,9 +19,9 @@ class STDOutServerProtocol:
         message = decoded_data[:-3]
 
         if message == "<<EOM>>":
-            logger.debug(f"{worker_id}: EOM recieved")
+            logger.debug(f"Worker {worker_id}: EOM recieved")
 
-        logger.debug(f"{worker_id}: {message}")
+        logger.debug(f"Worker {worker_id}: {message}")
 
     def connection_lost(self, exc):
         pass

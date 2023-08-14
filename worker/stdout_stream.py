@@ -12,4 +12,4 @@ class Sender():
         self.sock.sendto(app_output, self.addr)
 
     def finish(self):
-        self.send("<<EOM>>")
+        self.send("<<EOM>>".encode())
