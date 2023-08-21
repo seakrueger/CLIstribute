@@ -1,6 +1,7 @@
 <script>
-    import CommandDataTable from './CommandDataTable.svelte';
-    import WorkerDataTable from './WorkerDataTable.svelte';
+    import CommandDataTable from './tabs/CommandDataTable.svelte';
+    import WorkerDataTable from './tabs/WorkerDataTable.svelte';
+    import LogsDisplay from './tabs/LogsDisplay.svelte';
 </script>
 
 <div class="tabs">
@@ -17,6 +18,7 @@
     <input class="input" name="tabs" type="radio" id="tab-3"/>
     <label class="label" for="tab-3">Logs</label>
     <div class="panel">
+        <LogsDisplay />
     </div>
 </div>
 
