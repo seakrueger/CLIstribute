@@ -46,6 +46,8 @@ class JobServerProtocol(asyncio.Protocol):
                     response = self.process_error(message) 
                 case MessageType.PING:
                     response = self.process_ping(message)
+                case MessageType.SHUTDOWN:
+                    response = self.process_shutdown(message)
                 case _:
                     raise NotImplemented
             if response:
@@ -86,13 +88,18 @@ class JobServerProtocol(asyncio.Protocol):
             return self.message_handler.sender.process(0, response)
         else:
             self.workers_db.set_status(self.worker_id, "not-accepting-work")
-        
+
     def process_error(self, message):
         pass
 
     def process_ping(self, message):
         response = PingMessage("pong")
         return self.message_handler.sender.process(0, response)
+
+    def process_shutdown(self, message):
+        self.workers_db.set_status(self.worker_id, "offline")
+        if not message['shutdown']['finished']:
+            self.commands_db.update_command_status(message['shutdown']['job_id'], CommandStatus.QUEUED)
 
     def _grab_next(self, worker):
         next_command_id = self.commands_db.get_next_queued()

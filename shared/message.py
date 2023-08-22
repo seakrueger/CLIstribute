@@ -83,5 +83,8 @@ class PingMessage(Message):
         super().__init__(MessageType.PING, message)
 
 class ShutdownMessage(Message):
-    def __init__(self):
+    def __init__(self, finished: bool, job_id: int = None):
         super().__init__(MessageType.SHUTDOWN, "Shutting down")
+        self.shutdown = {}
+        self.shutdown['finished'] = finished
+        self.shutdown['job_id'] = job_id
