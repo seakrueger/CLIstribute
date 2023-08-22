@@ -6,10 +6,11 @@ import threading
 from database import WorkerDatabase
 
 logger = logging.getLogger("controller")
+message_logs = {}
 
 class STDOutServerProtocol:
     worker_db = WorkerDatabase()
-
+ 
     def connection_made(self, transport):
         self.transport = transport
     
@@ -18,8 +19,19 @@ class STDOutServerProtocol:
         worker_id = decoded_data[-3:]
         message = decoded_data[:-3]
 
+        if message == "<<SOM>>":
+            logger.debug(f"Worker {worker_id}: SOM recieved")
+            try:
+                message_logs.pop(worker_id)
+            except KeyError:
+                pass
+
+            message_logs[worker_id] = []
+
         if message == "<<EOM>>":
             logger.debug(f"Worker {worker_id}: EOM recieved")
+
+        message_logs[worker_id].append(message)
 
         logger.debug(f"Worker {worker_id}: {message}")
 

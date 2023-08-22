@@ -11,5 +11,8 @@ class Sender():
         app_output = output + self.worker_id
         self.sock.sendto(app_output, self.addr)
 
+    def start(self):
+        self.send("<<SOM>>".encode())
+
     def finish(self):
         self.send("<<EOM>>".encode())
