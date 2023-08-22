@@ -23,7 +23,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY ./controller ./
 COPY ./shared ./shared/
-COPY --from=svelte-builder /client/public/build/ ./ui/svelte-webapp/public/
+COPY --from=svelte-builder /client/public/build/ ./ui/svelte-webapp/public/build/
 
 ENV CLISTRIBUTE_LOGS=${LOG_PATH}/cli-controller.log
 ENV CLISTRIBUTE_DB=${DB_PATH}/clistribute.db
