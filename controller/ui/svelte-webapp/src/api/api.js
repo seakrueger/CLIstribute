@@ -21,3 +21,11 @@ export function getWorkers() {
             return data
         })
 }
+
+export function getLogs() {
+    return fetch(`./api/logs`)
+        .then((r) => r.json())
+        .then((data) => {
+            return data
+        })
+}
