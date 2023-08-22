@@ -27,9 +27,11 @@ class STDOutServerProtocol:
                 pass
 
             message_logs[worker_id] = []
+            return
 
         if message == "<<EOM>>":
             logger.debug(f"Worker {worker_id}: EOM recieved")
+            return
 
         message_logs[worker_id].append(message)
 
