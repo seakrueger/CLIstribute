@@ -1,4 +1,5 @@
 <script>
+    import { onDestroy } from "svelte";
     import { getCommands } from "../../api/api";
 
     let data = {};
@@ -12,8 +13,12 @@
     let interval;
     $: {
         clearInterval(interval);
-        interval = setInterval(fetchData, 2500);
+        interval = setInterval(fetchData, 2000);
     }
+
+    onDestroy(() => {
+        clearInterval(interval);
+    });
 </script>
 
 <table>

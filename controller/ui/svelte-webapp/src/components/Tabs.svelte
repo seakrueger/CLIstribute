@@ -2,90 +2,85 @@
     import CommandDataTable from './tabs/CommandDataTable.svelte';
     import WorkerDataTable from './tabs/WorkerDataTable.svelte';
     import LogsDisplay from './tabs/LogsDisplay.svelte';
+
+    export let activeTab = 1;
+
+    const items = [
+        {
+            label: "Commands",
+            value: 1,
+            component: CommandDataTable
+        },
+        {
+            label: "Workers",
+            value: 2,
+            component: WorkerDataTable
+        },
+        {
+            label: "Logs",
+            value: 3,
+            component: LogsDisplay
+        }
+    ];
+
+    const handleClick = tabValue => () => (activeTab = tabValue);
 </script>
 
-<div class="tabs">
-    <input class="input" name="tabs" type="radio" id="tab-1" checked="checked"/>
-    <label class="label" for="tab-1">Commands</label>
-    <div class="panel">
-        <CommandDataTable />
-    </div>
-    <input class="input" name="tabs" type="radio" id="tab-2"/>
-    <label class="label" for="tab-2">Workers</label>
-    <div class="panel">
-        <WorkerDataTable />
-    </div>
-    <input class="input" name="tabs" type="radio" id="tab-3"/>
-    <label class="label" for="tab-3">Logs</label>
-    <div class="panel">
-        <LogsDisplay />
-    </div>
-</div>
+<ul>
+    {#each items as item}
+        <li class={activeTab === item.value ? 'active' : ''}>
+            <span on:click={handleClick(item.value)} on:keypress={handleClick(item.value)}>{item.label}</span>
+        </li>
+    {/each}
+</ul>
+{#each items as item}
+    {#if activeTab == item.value}
+        <div class="tabArea">
+            <svelte:component this={item.component} />
+        </div>
+    {/if}
+{/each}
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
-
-    .tabs {
-        display: flex;
-        flex-wrap: wrap;
-        background: #e5e5e5;
-    }
-
-    .input {
-        position: absolute;
-        opacity: 0;
-    }
-
-    .label {
-        width: 100%;
-        padding: 20px 30px;
-        background: #e5e5e5;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 18px;
-        color: #7f7f7f;
-        transition: background 0.1s, color 0.1s;
+    .tabArea {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 .5rem .5rem;
+        border-top: 0;
     }
     
-    .label:hover {
-        background: #d8d8d8;
+    ul {
+        font-size: large;
+        font-weight: bold;
+        display: flex;
+        flex-wrap: wrap;
+        padding-left: 0;
+        margin-bottom: 0;
+        list-style: none;
+        border-bottom: 1px solid #dee2e6;
     }
 
-    .label:active {
-        background: #ccc;
+    li {
+        margin-bottom: -1px;
     }
 
-    .input:focus + .label {
-        z-index: 1;
-    }
-
-    .input:checked + .label {
-        background: #fff;
-        color: #000;
-    }
-
-    @media (min-width: 600px) {
-        .label {
-            width: auto;
-        }
-    }
-
-    .panel {
-        display: none;
-        padding: 20px 30px 30px;
-        width: 100%;
-        background: #fff;
-    }
-
-    @media (min-width: 600px) {
-        .panel {
-            order: 99;
-        }
-    }
-
-    .input:checked + .label + .panel {
+    span {
+        border: 1px solid transparent;
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
         display: block;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    span:hover {
+        border-color: #e9ecef #e9ecef #dee2e6;
+    }
+
+    li.active > span {
+        color: #495057;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
     }
 </style>
