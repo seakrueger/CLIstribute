@@ -1,6 +1,7 @@
 import os
 import sys
 import shlex
+import signal
 import socket
 import asyncio
 import logging
@@ -8,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 
 import async_client
 import stdout_stream
-from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage
+from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
 from shared.command import CommandStatus
 
 class Worker():
@@ -18,6 +19,10 @@ class Worker():
         self.udp_addr = (ip, 9602)
 
         self.status_queue = []
+
+        self.working = False
+        self.loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self._handle_shutdown()))
+        self.loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(self._handle_shutdown()))
 
     def set_id(self, worker_id):
         self.worker_id = worker_id
@@ -44,21 +49,22 @@ class Worker():
     async def execute_work(self, work):
         self.command = work["command"]
 
+        self.working = True
         work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
         logger.info(f"Starting job {self.command['job_id']}")
 
         try:
             cmd = shlex.split(self.command["cmd"])
-            process = await asyncio.create_subprocess_exec(
+            self.process = await asyncio.create_subprocess_exec(
                         *cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT)
 
             await self._send_status("Running Job", CommandStatus.RUNNING, False)
 
-            await self._capture_output(process)
+            await self._capture_output(self.process)
 
-            if process.returncode == 0 or process.returncode is None: 
+            if self.process.returncode == 0 or self.process.returncode is None: 
                 work_logger.info(f"Job {self.command['job_id']} finished successfully")
                 logger.info(f"Job {self.command['job_id']} finished successfully")
                 await self._send_status("Job Finished", CommandStatus.FINISHED, True)
@@ -74,17 +80,19 @@ class Worker():
         if self.status_queue:
             self._dump_message_queue()
 
+        self.working = False
+
     async def _send_status(self, message, status, success):
         try:
             await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, StatusMessage(message, status, success, self.command["job_id"]))
         except Exception:
             self.status_queue.append([message, status, success])
 
-    async def _capture_output(self, process):
+    async def _capture_output(self):
         full_log = b""
         self.streamer.start()
-        while process.returncode is None:
-            buf = await process.stdout.read(20)
+        while self.process.returncode is None:
+            buf = await self.process.stdout.read(20)
             if not buf:
                 break
             full_log += buf
@@ -114,6 +122,25 @@ class Worker():
     def _exit(self, reason):
         logger.error(f"Failed to connect to controller server ({reason})")
         sys.exit(1)
+    
+    async def _handle_shutdown(self):
+        logger.info("Recieved shutdown signal")
+        if self.working:
+            logger.critical("Shutting down while working, terminating job")
+            self.process.terminate()
+
+            try:
+                await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, ShutdownMessage(False, self.command['job_id']))
+            except:
+                pass
+        else:
+            try:
+                await async_client.send_message(self.loop, self.tcp_addr, self.worker_id, ShutdownMessage(True))
+            except:
+                pass
+
+        self.loop.stop()
+        sys.exit(0)
 
 async def main(ip):
     worker = Worker(ip)
