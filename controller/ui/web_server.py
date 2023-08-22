@@ -3,10 +3,11 @@ import queue
 import logging
 import threading
 
-from flask import Flask, send_from_directory, request
+from flask import Flask, Response, send_from_directory, request
 
 from shared.command import Command, CommandStatus
 from database import CommandDatabase, WorkerDatabase
+from networking.stdout_stream_endpoint import message_logs
 
 logger = logging.getLogger("controller")
 
@@ -53,6 +54,12 @@ def get_workers():
     worker_json = json.dumps([dict(worker) for worker in workers])
 
     return worker_json
+
+@app.route("/api/logs")
+def get_stdout_streams():
+    log_json = json.dumps(message_logs)
+
+    return Response(log_json, content_type="application/json")
 
 def start_webapp(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
     finished_shutdown.put(threading.current_thread().name)

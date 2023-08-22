@@ -1,5 +1,6 @@
 <script>
-    import { getCommands } from "../api/api";
+    import { onDestroy } from "svelte";
+    import { getCommands } from "../../api/api";
 
     let data = {};
 
@@ -12,8 +13,12 @@
     let interval;
     $: {
         clearInterval(interval);
-        interval = setInterval(fetchData, 2500);
+        interval = setInterval(fetchData, 2000);
     }
+
+    onDestroy(() => {
+        clearInterval(interval);
+    });
 </script>
 
 <table>
@@ -28,10 +33,10 @@
     <tbody>
         {#each data as item}
             <tr value={item.status}>
-                <td>{item.job_id}</td>
-                <td>{item.cmd}</td>
-                <td>{item.status}</td>
-                <td>{item.capture_stdout}</td>
+                <td id=id>{item.job_id}</td>
+                <td id=cmd>{item.cmd}</td>
+                <td id=status>{item.status}</td>
+                <td id=capture>{item.capture_stdout === 1 ? '✓' : "✗"}</td>
             </tr>        
         {/each}
     </tbody>
@@ -53,7 +58,7 @@
     }
 
     tr[value="failed"] {
-        background-color: firebrick;
+        background-color: orangered;
     }
 
     tr[value="running"] {
@@ -62,5 +67,23 @@
 
     tr[value="starting"] {
         background-color: aqua;
+    }
+
+    #id {
+        width: 5%;
+    }
+
+    #cmd {
+        width: 80%;
+        text-align: left;
+        padding-left: 5px;
+    }
+
+    #status {
+        width: 10%;
+    }
+
+    #capture {
+        width: 5%;
     }
 </style>

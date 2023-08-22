@@ -82,6 +82,7 @@ class Worker():
 
     async def _capture_output(self, process):
         full_log = b""
+        self.streamer.start()
         while process.returncode is None:
             buf = await process.stdout.read(20)
             if not buf:
@@ -89,6 +90,7 @@ class Worker():
             full_log += buf
             if self.command["capture_output"]:
                 self.streamer.send(buf)
+        self.streamer.finish()
         work_logger.info(full_log.decode())
 
     async def _dump_message_queue(self):

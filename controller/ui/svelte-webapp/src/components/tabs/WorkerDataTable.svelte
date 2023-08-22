@@ -1,5 +1,6 @@
 <script>
-    import { getWorkers } from "../api/api";
+    import { onDestroy } from "svelte";
+    import { getWorkers } from "../../api/api";
 
     let data = {};
 
@@ -14,6 +15,10 @@
         clearInterval(interval);
         interval = setInterval(fetchData, 2500);
     }
+
+    onDestroy(() => {
+        clearInterval(interval);
+    });
 </script>
 
 <table>
