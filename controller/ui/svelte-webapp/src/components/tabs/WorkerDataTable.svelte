@@ -33,7 +33,7 @@
     </thead>
     <tbody>
         {#each data as item}
-            <tr>
+            <tr value={item.status}>
                 <td>{item.worker_id}</td>
                 <td>{item.name}</td>
                 <td>{item.status}</td>
@@ -53,5 +53,17 @@
         flex: 1;
         width: 100%;
         margin-bottom: 5rem;
+    }
+
+    tr[value="accepting-work"] {
+        background-color: #80ff0052;
+    }
+
+    tr[value="not-accepting-work"] {
+        background-color: #ff2f0052;
+    }
+
+    tr[value="offline"] {
+        background-color: #c0b6b67b;
     }
 </style>

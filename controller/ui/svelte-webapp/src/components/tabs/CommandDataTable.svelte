@@ -54,19 +54,19 @@
     }
 
     tr[value="successful"] {
-        background-color: chartreuse;
+        background-color: #80ff0052;
     }
 
     tr[value="failed"] {
-        background-color: orangered;
+        background-color: #ff2f0052;
     }
 
     tr[value="running"] {
-        background-color: yellow;
+        background-color: #ffee005f;
     }
 
     tr[value="starting"] {
-        background-color: aqua;
+        background-color: #006eff52;
     }
 
     #id {
