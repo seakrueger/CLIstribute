@@ -9,6 +9,8 @@ from logging.handlers import RotatingFileHandler
 
 import async_client
 import stdout_stream
+if os.getenv("CLISTRIBUTE_APT"):
+    import package_installer
 from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
 from shared.command import CommandStatus
 
@@ -174,6 +176,7 @@ if __name__ == "__main__":
         if len(args) != 2:
             print("Please provide an ip address to connect to")
             quit()
+        ip = args[1]
 
     # General logging
     console_handler = logging.StreamHandler(sys.stdout)
