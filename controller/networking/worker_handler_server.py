@@ -99,6 +99,7 @@ class JobServerProtocol(asyncio.Protocol):
     def process_shutdown(self, message):
         self.workers_db.set_status(self.worker_id, "offline")
         if not message['shutdown']['finished']:
+            self.workers_db.clear_job_id(self.worker_id)
             self.commands_db.update_command_status(message['shutdown']['job_id'], CommandStatus.QUEUED)
 
     def _grab_next(self, worker):

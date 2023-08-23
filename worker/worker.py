@@ -20,7 +20,8 @@ class Worker():
 
         self.status_queue = []
 
-        self.working = False
+        self.running = True
+        self._working = False
         self.loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(self._handle_shutdown()))
         self.loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(self._handle_shutdown()))
 
@@ -49,7 +50,7 @@ class Worker():
     async def execute_work(self, work):
         self.command = work["command"]
 
-        self.working = True
+        self._working = True
         work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
         logger.info(f"Starting job {self.command['job_id']}")
 
@@ -62,12 +63,15 @@ class Worker():
 
             await self._send_status("Running Job", CommandStatus.RUNNING, False)
 
-            await self._capture_output(self.process)
+            await self._capture_output()
 
             if self.process.returncode == 0 or self.process.returncode is None: 
                 work_logger.info(f"Job {self.command['job_id']} finished successfully")
                 logger.info(f"Job {self.command['job_id']} finished successfully")
                 await self._send_status("Job Finished", CommandStatus.FINISHED, True)
+            elif self.process.returncode == -15:
+                # Job terminated, handled elsewhere
+                return
             else:
                 work_logger.warning(f"Job {self.command['job_id']} finished with an error")
                 logger.warning(f"Job {self.command['job_id']} finished with an error")
@@ -80,7 +84,7 @@ class Worker():
         if self.status_queue:
             self._dump_message_queue()
 
-        self.working = False
+        self._working = False
 
     async def _send_status(self, message, status, success):
         try:
@@ -122,10 +126,11 @@ class Worker():
     def _exit(self, reason):
         logger.error(f"Failed to connect to controller server ({reason})")
         sys.exit(1)
-    
+
     async def _handle_shutdown(self):
         logger.info("Recieved shutdown signal")
-        if self.working:
+        self.running = False
+        if self._working:
             logger.critical("Shutting down while working, terminating job")
             self.process.terminate()
 
@@ -139,16 +144,13 @@ class Worker():
             except:
                 pass
 
-        self.loop.stop()
-        sys.exit(0)
-
 async def main(ip):
     worker = Worker(ip)
 
     response = await worker.init_connect()
     worker.set_id(response["init"]["worker_id"])
 
-    while True:
+    while worker.running:
         work = await worker.request_work()
 
         if work["type"] == MessageType.NO_COMMAND:
