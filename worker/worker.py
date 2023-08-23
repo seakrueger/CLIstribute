@@ -15,8 +15,10 @@ from shared.command import CommandStatus
 class Worker():
     def __init__(self, ip):
         self.loop = asyncio.get_running_loop()
-        self.tcp_addr = (ip, 9601)
-        self.udp_addr = (ip, 9602)
+        self.tcp_addr = (ip, int(os.getenv("TCP_PORT", 9601)))
+        self.udp_addr = (ip, int(os.getenv("UDP_PORT", 9602)))
+        logger.debug(f"TCP: {self.tcp_addr}")
+        logger.debug(f"UDP: {self.udp_addr}")
 
         self.status_queue = []
 
@@ -130,6 +132,7 @@ class Worker():
     async def _handle_shutdown(self):
         logger.info("Recieved shutdown signal")
         self.running = False
+
         if self._working:
             logger.critical("Shutting down while working, terminating job")
             self.process.terminate()
