@@ -72,11 +72,11 @@ class CommandMessage(Message):
         self.command['job_id'] = command.job_id
 
 class CallbackMessage(Message):
-    def __init__(self, message: str, come_back: bool, interval_ms: int) -> None:
+    def __init__(self, message: str, come_back: bool, interval: int) -> None:
         super().__init__(MessageType.NO_COMMAND, message)
         self.callback = {}
         self.callback['come_back'] = come_back
-        self.callback['interval'] = interval_ms
+        self.callback['interval'] = interval
 
 class PingMessage(Message):
     def __init__(self, message) -> None:

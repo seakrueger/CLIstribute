@@ -83,8 +83,8 @@ class JobServerProtocol(asyncio.Protocol):
             if next_command:
                 response = CommandMessage("Command to be run", next_command)
             else:
-                response = CallbackMessage("No command right now, come back later", True, 10000)
-                
+                response = CallbackMessage("No command right now, come back later", True, 10)
+
             return self.message_handler.sender.process(0, response)
         else:
             self.workers_db.set_status(self.worker_id, "not-accepting-work")

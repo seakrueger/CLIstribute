@@ -156,7 +156,7 @@ async def main(ip):
         if work["type"] == MessageType.NO_COMMAND:
             if work["callback"]["come_back"]:
                 logger.debug("No work found, waiting")
-                await asyncio.sleep(work["callback"]["interval"] / 1000)
+                await asyncio.sleep(work["callback"]["interval"])
                 continue
         elif work["type"] == MessageType.SHUTDOWN:
             logger.warning("Recieved shutdown signal from controller")
