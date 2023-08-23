@@ -55,7 +55,7 @@ class Worker():
         self.command = work["command"]
 
         self._working = True
-        work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
+        work_logger.info(f"Starting job {self.command['job_id']}: \"{self.command['cmd']}\"")
         logger.info(f"Starting job {self.command['job_id']}")
 
         try:
@@ -152,8 +152,11 @@ class Worker():
 async def main(ip):
     worker = Worker(ip)
 
-    response = await worker.init_connect()
-    worker.set_id(response["init"]["worker_id"])
+    init_response = await worker.init_connect()
+    worker.set_id(init_response["init"]["worker_id"])
+
+    if os.getenv("CLISTRIBUTE_APT"):
+        package_installer.packages(["curl", "ffmpeg"])
 
     while worker.running:
         work = await worker.request_work()
