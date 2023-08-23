@@ -82,7 +82,7 @@ class Worker():
             await self._send_status("Job Failed", CommandStatus.FINISHED, False)
 
         if self.status_queue:
-            self._dump_message_queue()
+            await self._dump_message_queue()
 
         self._working = False
 

@@ -19,7 +19,7 @@ class JobServerProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        logger.info(f"Connection from {peername}")
+        logger.debug(f"Connection from {peername}")
 
         ip = peername[0]
         self.worker_id = self.workers_db.get_worker_id_by_ip(ip)
@@ -33,7 +33,7 @@ class JobServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         try:
             message = self.message_handler.reciever.parse(data)
-            logger.debug(f"Message type: {message['type']}")
+            logger.info(f"Worker {self.worker_id}: {message['message']}")
             
             match message['type']:
                 case MessageType.INIT:

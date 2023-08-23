@@ -33,7 +33,10 @@ class STDOutServerProtocol:
             logger.debug(f"Worker {worker_id}: EOM recieved")
             return
 
-        message_logs[worker_id].append(message)
+        try:
+            message_logs[worker_id].append(message)
+        except KeyError:
+            message_logs[worker_id] = [message]
 
         logger.debug(f"Worker {worker_id}: {message}")
 
