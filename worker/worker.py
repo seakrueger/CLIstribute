@@ -11,7 +11,7 @@ import async_client
 import stdout_stream
 if os.getenv("CLISTRIBUTE_APT"):
     import package_installer
-from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
+from shared.message import InitMessageToController, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
 from shared.command import CommandStatus
 
 class Worker():
@@ -36,7 +36,7 @@ class Worker():
     async def init_connect(self):
         logger.info("Initializing with controller")
         try:
-            return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
+            return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessageToController("Connecting worker to controller", socket.gethostname(), "accepting-work"))
         except TimeoutError:
             self._exit("3 second connection timeout")
         except ConnectionRefusedError:
@@ -156,7 +156,7 @@ async def main(ip):
     worker.set_id(init_response["init"]["worker_id"])
 
     if os.getenv("CLISTRIBUTE_APT"):
-        package_installer.packages(["curl", "ffmpeg"])
+        package_installer.packages(init_response["init"]["packages"])
 
     while worker.running:
         work = await worker.request_work()
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     log_path = os.getenv("CLISTRIBUTE_LOGS", "cli-worker.log")
     file_handler = RotatingFileHandler(log_path, maxBytes = 5*1024*1024, backupCount = 1)
-    file_handler.setLevel(logging.WARNING)
+    file_handler.setLevel(logging.INFO)
     file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(message)s")
     file_handler.setFormatter(file_formatter)
 
