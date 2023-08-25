@@ -33,13 +33,19 @@ class Message(object):
     def __getitem__(self, key):
         return getattr(self, key)
 
-class InitMessage(Message):
-    def __init__(self, message: str, hostname: str = None, status: str = None, worker_id: int = None) -> None:
+class InitMessageToController(Message):
+    def __init__(self, message: str, hostname: str, status: str) -> None:
         super().__init__(MessageType.INIT, message)
         self.init = {}
         self.init['hostname'] = hostname
         self.init['status'] = status
+
+class InitFromControllerMessage(Message):
+    def __init__(self, message: str, worker_id: int, packages) -> None:
+        super().__init__(MessageType.INIT, message)
+        self.init = {}
         self.init['worker_id'] = worker_id
+        self.init['packages'] = packages
 
 class StatusMessage(Message):
     def __init__(self, message: str, status: CommandStatus, successful: bool, job_id: int) -> None:
@@ -72,11 +78,11 @@ class CommandMessage(Message):
         self.command['job_id'] = command.job_id
 
 class CallbackMessage(Message):
-    def __init__(self, message: str, come_back: bool, interval_ms: int) -> None:
+    def __init__(self, message: str, come_back: bool, interval: int) -> None:
         super().__init__(MessageType.NO_COMMAND, message)
         self.callback = {}
         self.callback['come_back'] = come_back
-        self.callback['interval'] = interval_ms
+        self.callback['interval'] = interval
 
 class PingMessage(Message):
     def __init__(self, message) -> None:

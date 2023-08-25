@@ -37,6 +37,6 @@ async def read_input(shutdown_signal: threading.Event, finished_shutdown: queue.
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")
 
-def start_reader(shutdown_signal: threading.Event, finished_shutdown: queue.Queue):
+def start_reader(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, config):
     logger.info(f"starting {threading.current_thread().name}")
     asyncio.run(read_input(shutdown_signal, finished_shutdown))

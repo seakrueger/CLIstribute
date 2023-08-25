@@ -9,14 +9,18 @@ from logging.handlers import RotatingFileHandler
 
 import async_client
 import stdout_stream
-from shared.message import InitMessage, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
+if os.getenv("CLISTRIBUTE_APT"):
+    import package_installer
+from shared.message import InitMessageToController, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
 from shared.command import CommandStatus
 
 class Worker():
     def __init__(self, ip):
         self.loop = asyncio.get_running_loop()
-        self.tcp_addr = (ip, 9601)
-        self.udp_addr = (ip, 9602)
+        self.tcp_addr = (ip, int(os.getenv("TCP_PORT", 9601)))
+        self.udp_addr = (ip, int(os.getenv("UDP_PORT", 9602)))
+        logger.debug(f"TCP: {self.tcp_addr}")
+        logger.debug(f"UDP: {self.udp_addr}")
 
         self.status_queue = []
 
@@ -32,7 +36,7 @@ class Worker():
     async def init_connect(self):
         logger.info("Initializing with controller")
         try:
-            return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessage("Connecting worker to controller", socket.gethostname(), "accepting-work"))
+            return await async_client.send_message(self.loop, self.tcp_addr, -1, InitMessageToController("Connecting worker to controller", socket.gethostname(), "accepting-work"))
         except TimeoutError:
             self._exit("3 second connection timeout")
         except ConnectionRefusedError:
@@ -51,7 +55,7 @@ class Worker():
         self.command = work["command"]
 
         self._working = True
-        work_logger.info(f"Starting job: \"{self.command['cmd']}\"")
+        work_logger.info(f"Starting job {self.command['job_id']}: \"{self.command['cmd']}\"")
         logger.info(f"Starting job {self.command['job_id']}")
 
         try:
@@ -130,6 +134,7 @@ class Worker():
     async def _handle_shutdown(self):
         logger.info("Recieved shutdown signal")
         self.running = False
+
         if self._working:
             logger.critical("Shutting down while working, terminating job")
             self.process.terminate()
@@ -147,8 +152,11 @@ class Worker():
 async def main(ip):
     worker = Worker(ip)
 
-    response = await worker.init_connect()
-    worker.set_id(response["init"]["worker_id"])
+    init_response = await worker.init_connect()
+    worker.set_id(init_response["init"]["worker_id"])
+
+    if os.getenv("CLISTRIBUTE_APT"):
+        package_installer.packages(init_response["init"]["packages"])
 
     while worker.running:
         work = await worker.request_work()
@@ -156,8 +164,11 @@ async def main(ip):
         if work["type"] == MessageType.NO_COMMAND:
             if work["callback"]["come_back"]:
                 logger.debug("No work found, waiting")
-                await asyncio.sleep(work["callback"]["interval"] / 1000)
+                await asyncio.sleep(work["callback"]["interval"])
                 continue
+            else:
+                logger.info("No more work required, stopping")
+                sys.exit(0)
         elif work["type"] == MessageType.SHUTDOWN:
             logger.warning("Recieved shutdown signal from controller")
             sys.exit(0)
@@ -171,6 +182,7 @@ if __name__ == "__main__":
         if len(args) != 2:
             print("Please provide an ip address to connect to")
             quit()
+        ip = args[1]
 
     # General logging
     console_handler = logging.StreamHandler(sys.stdout)
@@ -184,7 +196,7 @@ if __name__ == "__main__":
 
     log_path = os.getenv("CLISTRIBUTE_LOGS", "cli-worker.log")
     file_handler = RotatingFileHandler(log_path, maxBytes = 5*1024*1024, backupCount = 1)
-    file_handler.setLevel(logging.WARNING)
+    file_handler.setLevel(logging.INFO)
     file_formatter = logging.Formatter("%(asctime)s: [%(levelname)s]: %(message)s")
     file_handler.setFormatter(file_formatter)
 

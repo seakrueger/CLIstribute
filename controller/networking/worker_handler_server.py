@@ -4,22 +4,24 @@ import logging
 import threading
 
 from shared.message_handler import MessageHandler
-from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage, PingMessage
+from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitFromControllerMessage, PingMessage
 from shared.command import CommandStatus
 from database import CommandDatabase, WorkerDatabase
 
 logger = logging.getLogger("controller")
 
 class JobServerProtocol(asyncio.Protocol):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+
+        self.config = config
 
         self.commands_db = CommandDatabase()
         self.workers_db = WorkerDatabase()
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        logger.info(f"Connection from {peername}")
+        logger.debug(f"Connection from {peername}")
 
         ip = peername[0]
         self.worker_id = self.workers_db.get_worker_id_by_ip(ip)
@@ -33,7 +35,7 @@ class JobServerProtocol(asyncio.Protocol):
     def data_received(self, data):
         try:
             message = self.message_handler.reciever.parse(data)
-            logger.debug(f"Message type: {message['type']}")
+            logger.info(f"Worker {self.worker_id}: {message['message']}")
             
             match message['type']:
                 case MessageType.INIT:
@@ -61,10 +63,10 @@ class JobServerProtocol(asyncio.Protocol):
             self.transport.write(self.message_handler.sender.process(0, response))
         finally:
             self.transport.close()
-    
+
     def process_init(self, message):
         self.workers_db.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
-        response = InitMessage("Assigned Worker ID", worker_id=self.worker_id)
+        response = InitFromControllerMessage("Assigned Worker ID", self.worker_id, self.config['apt']['packages'])
         return self.message_handler.sender.process(0, response)
     
     def process_status(self, message):
@@ -83,8 +85,8 @@ class JobServerProtocol(asyncio.Protocol):
             if next_command:
                 response = CommandMessage("Command to be run", next_command)
             else:
-                response = CallbackMessage("No command right now, come back later", True, 10000)
-                
+                response = CallbackMessage("No command right now, come back later", self.config['workers']['comeback'], self.config['workers']['checkback_interval'])
+
             return self.message_handler.sender.process(0, response)
         else:
             self.workers_db.set_status(self.worker_id, "not-accepting-work")
@@ -119,19 +121,19 @@ async def wait_for_shutdown_sig(signal: threading.Event):
     while not signal.is_set():
         await asyncio.sleep(1)
 
-async def main(shutdown_signal: threading.Event, addr):
+async def main(shutdown_signal: threading.Event, addr, config):
     event_loop = asyncio.get_running_loop()
 
     tcp_server = await event_loop.create_server(
-        lambda: JobServerProtocol(),
+        lambda: JobServerProtocol(config),
         addr[0], addr[1])
 
     async with tcp_server:
         await asyncio.wait([tcp_server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
     
-def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr, config):
     logger.info(f"starting {threading.current_thread().name} on {addr}")
-    asyncio.run(main(shutdown_signal, addr))
+    asyncio.run(main(shutdown_signal, addr, config))
     
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")

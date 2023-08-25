@@ -10,6 +10,8 @@ import argparse
 import threading
 from logging.handlers import RotatingFileHandler
 
+import toml
+
 from networking.worker_handler_server import start_handler_server
 from networking.stdout_stream_endpoint import start_stdout_endpoint
 from ui.web_server import start_webapp
@@ -25,21 +27,22 @@ class ControllerApp():
         signal.signal(signal.SIGINT, self._exit_handler)
         signal.signal(signal.SIGTERM, self._exit_handler)
 
+        self._load_config()
         self._init_database()
-        self.ip = self._resolve_local_ip()
+        self._resolve_local_ip()
     
     def start(self):
         if self.args.webapp:
-            webapp_thread = threading.Thread(target=start_webapp, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600),), daemon=True, name="WebApp")
+            webapp_thread = threading.Thread(target=start_webapp, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9600), self.config,), daemon=True, name="WebApp")
             webapp_thread.start()
         else:
-            reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown,), daemon=True, name="UserInputThread")
+            reader_thread = threading.Thread(target=start_reader, args=(self.shutdown_signal, self.finished_shutdown, self.config,), daemon=True, name="UserInputThread")
             reader_thread.start()
 
-        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9601),), daemon=True, name="WorkerHandlerThread")
+        handler_thread = threading.Thread(target=start_handler_server, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9601), self.config,), daemon=True, name="WorkerHandlerThread")
         handler_thread.start()
 
-        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9602),), daemon=True, name="StdOutStreamThread")
+        stdout_thread = threading.Thread(target=start_stdout_endpoint, args=(self.shutdown_signal, self.finished_shutdown, (self.ip, 9602), self.config), daemon=True, name="StdOutStreamThread")
         stdout_thread.start()
     
     def run(self):
@@ -82,6 +85,19 @@ class ControllerApp():
         db_con.commit()
         db_con.close()
 
+    def _load_config(self):
+        config_path = os.getenv("CONFIG_PATH", "/resources/")
+        config_name = os.getenv("CONFIG_FILE", "config.toml")
+        try:
+            with open(os.path.join(config_path, config_name)) as config_file:
+                self.config = toml.load(config_file)
+        except FileNotFoundError:
+            logger.warning("Loading default config")
+            with open("/clistribute/resources/config.toml") as config_file:
+                self.config = toml.load(config_file)
+
+        logger.debug("Loaded config file")
+
     def _resolve_local_ip(self):
         temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         temp_socket.settimeout(0)
@@ -93,7 +109,7 @@ class ControllerApp():
         finally:
             temp_socket.close()
 
-        return ip
+        self.ip = ip
 
 def main(args):
     controller = ControllerApp(args)
