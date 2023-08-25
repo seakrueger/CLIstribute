@@ -166,6 +166,9 @@ async def main(ip):
                 logger.debug("No work found, waiting")
                 await asyncio.sleep(work["callback"]["interval"])
                 continue
+            else:
+                logger.info("No more work required, stopping")
+                sys.exit(0)
         elif work["type"] == MessageType.SHUTDOWN:
             logger.warning("Recieved shutdown signal from controller")
             sys.exit(0)

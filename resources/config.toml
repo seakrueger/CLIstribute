@@ -1,5 +1,13 @@
+[workers]
+# Whether the worker should checkback at a later time if it requests work and there is none 
+# otherwise, worker shutdowns
+comeback = true
+# Number of seconds before a worker checks back for work if there previously was none
+checkback_interval = 10
 
 [apt]
+# APT Packages that will be installed on the worker upon initializing with controller
+# By default, it will only attempt to install if the worker is running in a container
 packages = [
     "curl",
     "ffmpeg",
