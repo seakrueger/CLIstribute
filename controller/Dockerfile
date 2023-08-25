@@ -11,6 +11,8 @@ RUN npm run build
 # Main
 FROM python:3.10-bookworm
 
+ENV CONFIG_PATH=/etc/clistribute/
+ENV CONFIG_NAME=config.toml
 ENV LOG_DEBUG=0
 
 ARG LOG_PATH=/var/log/clistribute
@@ -23,6 +25,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY ./controller ./
 COPY ./shared ./shared/
+COPY ./resources ./resources/
 COPY --from=svelte-builder /client/public/build/ ./ui/svelte-webapp/public/build/
 
 ENV CLISTRIBUTE_LOGS=${LOG_PATH}/cli-controller.log

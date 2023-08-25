@@ -57,7 +57,7 @@ async def main(shutdown_signal: threading.Event, addr):
     await wait_for_shutdown_sig(shutdown_signal)
     transport.close()
 
-def start_stdout_endpoint(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+def start_stdout_endpoint(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr, config):
     logger.info(f"starting {threading.current_thread().name} on {addr}")
     asyncio.run(main(shutdown_signal, addr))
 

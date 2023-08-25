@@ -4,7 +4,7 @@ import logging
 import threading
 
 from shared.message_handler import MessageHandler
-from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitMessage, PingMessage
+from shared.message import MessageType, ErrorType, ErrorMessage, CommandMessage, CallbackMessage, InitFromControllerMessage, PingMessage
 from shared.command import CommandStatus
 from database import CommandDatabase, WorkerDatabase
 
@@ -61,10 +61,10 @@ class JobServerProtocol(asyncio.Protocol):
             self.transport.write(self.message_handler.sender.process(0, response))
         finally:
             self.transport.close()
-    
+
     def process_init(self, message):
         self.workers_db.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
-        response = InitMessage("Assigned Worker ID", worker_id=self.worker_id)
+        response = InitFromControllerMessage("Assigned Worker ID", self.worker_id, ["curl", "ffmpeg"])
         return self.message_handler.sender.process(0, response)
     
     def process_status(self, message):
@@ -129,7 +129,7 @@ async def main(shutdown_signal: threading.Event, addr):
     async with tcp_server:
         await asyncio.wait([tcp_server.serve_forever(), wait_for_shutdown_sig(shutdown_signal)], return_when=asyncio.FIRST_COMPLETED)
     
-def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr, config):
     logger.info(f"starting {threading.current_thread().name} on {addr}")
     asyncio.run(main(shutdown_signal, addr))
     

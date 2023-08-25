@@ -61,7 +61,7 @@ def get_stdout_streams():
 
     return Response(log_json, content_type="application/json")
 
-def start_webapp(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr):
+def start_webapp(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr, config):
     finished_shutdown.put(threading.current_thread().name)
 
     logger.info(f"starting {threading.current_thread().name} on {addr}")
