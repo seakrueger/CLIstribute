@@ -4,6 +4,9 @@ import logging
 logger = logging.getLogger("worker")
 
 def packages(pkgs):
+    if not pkgs:
+        return
+
     apt_cache = apt.Cache()
     apt_cache.update()
     apt_cache.open()
@@ -20,3 +23,5 @@ def packages(pkgs):
         apt_cache.commit()
     except Exception as e:
         logger.error("Failed to install packages", e)
+
+    apt_cache.close()
