@@ -11,8 +11,10 @@ from database import CommandDatabase, WorkerDatabase
 logger = logging.getLogger("controller")
 
 class JobServerProtocol(asyncio.Protocol):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+
+        self.config = config
 
         self.commands_db = CommandDatabase()
         self.workers_db = WorkerDatabase()
@@ -64,7 +66,7 @@ class JobServerProtocol(asyncio.Protocol):
 
     def process_init(self, message):
         self.workers_db.update_worker_init(self.worker_id, message['init']['hostname'], message['init']['status'])
-        response = InitFromControllerMessage("Assigned Worker ID", self.worker_id, ["curl", "ffmpeg"])
+        response = InitFromControllerMessage("Assigned Worker ID", self.worker_id, self.config['apt']['packages'])
         return self.message_handler.sender.process(0, response)
     
     def process_status(self, message):
@@ -119,11 +121,11 @@ async def wait_for_shutdown_sig(signal: threading.Event):
     while not signal.is_set():
         await asyncio.sleep(1)
 
-async def main(shutdown_signal: threading.Event, addr):
+async def main(shutdown_signal: threading.Event, addr, config):
     event_loop = asyncio.get_running_loop()
 
     tcp_server = await event_loop.create_server(
-        lambda: JobServerProtocol(),
+        lambda: JobServerProtocol(config),
         addr[0], addr[1])
 
     async with tcp_server:
@@ -131,7 +133,7 @@ async def main(shutdown_signal: threading.Event, addr):
     
 def start_handler_server(shutdown_signal: threading.Event, finished_shutdown: queue.Queue, addr, config):
     logger.info(f"starting {threading.current_thread().name} on {addr}")
-    asyncio.run(main(shutdown_signal, addr))
+    asyncio.run(main(shutdown_signal, addr, config))
     
     finished_shutdown.put(threading.current_thread().name)
     logger.info(f"Finished {threading.current_thread().name} thread")
