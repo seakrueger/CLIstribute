@@ -7,8 +7,8 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 
-import async_client
-import stdout_stream
+import networking.async_client as async_client
+import networking.stdout_stream as stdout_stream
 if os.getenv("CLISTRIBUTE_APT"):
     import package_installer
 from shared.message import InitMessageToController, RequestMessage, StatusMessage, MessageType, PingMessage, ShutdownMessage
