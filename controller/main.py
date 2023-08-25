@@ -91,6 +91,7 @@ class ControllerApp():
         try:
             with open(os.path.join(config_path, config_name)) as config_file:
                 self.config = toml.load(config_file)
+            logger.info("Loading custom config")
         except FileNotFoundError:
             logger.warning("Loading default config")
             with open("/clistribute/resources/config.toml") as config_file:
