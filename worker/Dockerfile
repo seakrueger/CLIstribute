@@ -30,4 +30,4 @@ RUN mkdir -p {LOG_PATH}
 
 VOLUME [ ${LOG_PATH} ]
 
-CMD [ "python3", "worker.py" ]
+CMD [ "python3", "main.py" ]
