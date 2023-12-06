@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     if not args.silent:
         console_handler = logging.StreamHandler(sys.stdout)
-        if args.verbose or int(os.getenv("LOG_DEBUG")) == 1:
+        if args.verbose or int(os.getenv("LOG_DEBUG") or 0) == 1:
             console_handler.setLevel(logging.DEBUG)
         else:
             console_handler.setLevel(logging.INFO)

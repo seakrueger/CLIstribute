@@ -85,7 +85,7 @@ class ControllerApp():
         db_con.close()
 
     def _load_config(self):
-        config_path = os.getenv("CONFIG_PATH", "/resources/")
+        config_path = os.getenv("CONFIG_PATH", "resources/")
         config_name = os.getenv("CONFIG_FILE", "config.toml")
         try:
             with open(os.path.join(config_path, config_name)) as config_file:
